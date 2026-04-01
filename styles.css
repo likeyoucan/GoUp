@@ -45,7 +45,7 @@ body .text-4xl { font-size: calc(2.25rem * var(--font-scale)); line-height: 2.5;
    3. БАЗОВЫЕ НАСТРОЙКИ
 ========================================= */
 * {
-    /* ИСПРАВЛЕНО: убираем синюю подсветку при клике на всех мобильных браузерах */
+    /* Убираем синюю подсветку при клике на всех мобильных браузерах */
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -183,7 +183,7 @@ body .primary-focus-border:focus { border-color: var(--primary-color); }
 select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
 select option { background-color: var(--surface-color); color: var(--text-color); }
 
-/* ИСПРАВЛЕНО: Увеличенные ползунки (28x28px) для более легкого касания пальцем */
+/* Увеличенные ползунки (28x28px) для пальцев */
 input[type=range] { -webkit-appearance: none; background: transparent; }
 input[type=range]::-webkit-slider-thumb { 
     -webkit-appearance: none; 
@@ -233,7 +233,7 @@ html.dark .custom-toggle { background-color: #374151; }
 body input:checked + .custom-toggle { background-color: var(--primary-color); }
 body input:checked + .custom-toggle::after { transform: translateX(20px); }
 
-/* Анимация вспышки при фиксации круга */
+/* Анимация вспышки при фиксации круга (Секундомер) */
 @keyframes flashCircle {
     0% { opacity: 0.4; transform: scale(0.98); }
     100% { opacity: 0; transform: scale(1); }
@@ -241,4 +241,16 @@ body input:checked + .custom-toggle::after { transform: translateX(20px); }
 
 .flash-active {
     animation: flashCircle 0.5s ease-out;
+}
+
+/* Анимация ошибки валидации (Встряхивание поля ввода) */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    50% { transform: translateX(4px); }
+    75% { transform: translateX(-4px); }
+}
+
+.animate-shake {
+    animation: shake 0.3s ease-in-out;
 }
