@@ -15,7 +15,6 @@ export const themeManager = {
             toggle.addEventListener('change', (e) => {
                 this.showMs = e.target.checked;
                 localStorage.setItem('app_show_ms', this.showMs);
-                // Отправляем событие о смене настроек миллисекунд
                 document.dispatchEvent(new CustomEvent('msChanged', { detail: this.showMs }));
             });
         }

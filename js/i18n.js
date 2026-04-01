@@ -15,7 +15,9 @@ export const translations = {
         empty_sessions: "No saved sessions", session_saved: "Session saved!", enter_name: "Enter session name:",
         rename: "Rename", delete: "Delete", cancel: "Cancel", session_name: "Session Name",
         reset_confirm_msg: "Are you sure? Your saved workouts will not be deleted.",
-        name_exists: "Name already exists" // НОВОЕ
+        name_exists: "Name already exists",
+        sound: "Sound", vibration: "Vibration", sound_theme: "Sound Theme",
+        theme_sport: "Sport", theme_vibe: "Vibe", theme_work: "Work", theme_life: "Life"
     },
     ru: {
         stopwatch: "Секундомер", timer: "Таймер", tabata: "Табата", settings: "Настройки",
@@ -33,7 +35,9 @@ export const translations = {
         empty_sessions: "Нет сохраненных результатов", session_saved: "Сохранено!", enter_name: "Введите название:",
         rename: "Изменить", delete: "Удалить", cancel: "Отмена", session_name: "Имя сессии",
         reset_confirm_msg: "Вы уверены? Ваши тренировки не будут удалены.",
-        name_exists: "Имя уже существует" // НОВОЕ
+        name_exists: "Имя уже существует",
+        sound: "Звук", vibration: "Вибрация", sound_theme: "Тема звуков",
+        theme_sport: "Спорт", theme_vibe: "Вайб", theme_work: "Работа", theme_life: "Жизнь"
     }
 };
 

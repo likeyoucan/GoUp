@@ -1,4 +1,5 @@
-import { $, showToast, pad, updateText, updateTitle, vibrate, requestWakeLock, releaseWakeLock } from './utils.js';
+import { $, showToast, pad, updateText, updateTitle, requestWakeLock, releaseWakeLock } from './utils.js';
+import { sm } from './sound.js';
 import { t } from './i18n.js';
 
 export const tm = {
@@ -15,7 +16,6 @@ export const tm = {
         
         [this.els.m, this.els.s].forEach(i => {
             if(!i) return;
-            // Улучшенный UX: убираем ноль при фокусе
             i.addEventListener('focus', () => { if (i.value === '00' || i.value === '0') i.value = ''; });
             i.addEventListener('input', () => { 
                 i.value = i.value.replace(/\D/g, '').slice(0, 2); 
@@ -31,7 +31,7 @@ export const tm = {
     },
     
     toggle() {
-        vibrate(50);
+        sm.vibrate(50); sm.play('click');
         if (this.isRunning) {
             this.isRunning = false; this.isPaused = true; 
             this.remainingAtPause = Math.max(0, this.targetTime - performance.now());
@@ -57,7 +57,7 @@ export const tm = {
     },
     
     reset() {
-        vibrate(30);
+        sm.vibrate(30); sm.play('click');
         this.isRunning = false; this.isPaused = false; 
         cancelAnimationFrame(this.rAF);
         releaseWakeLock();
@@ -94,7 +94,8 @@ export const tm = {
         
         if (remaining <= 0) {
             this.isRunning = false;
-            vibrate([200, 100, 200, 100, 400]);
+            sm.vibrate([200, 100, 200, 100, 400]);
+            sm.play('complete');
             requestAnimationFrame(() => { showToast(t('timer_finished')); this.reset(); }); 
             return;
         }

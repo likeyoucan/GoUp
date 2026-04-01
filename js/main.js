@@ -4,6 +4,7 @@ import { navigation } from './navigation.js';
 import { sw } from './stopwatch.js';
 import { tm } from './timer.js';
 import { tb } from './tabata.js';
+import { sm } from './sound.js';
 
 const resetModal = {
     modal: document.getElementById('reset-modal'),
@@ -32,24 +33,22 @@ const resetModal = {
         }, 300);
     },
     confirm() {
-        localStorage.removeItem('theme_mode'); 
-        localStorage.removeItem('theme_color');
-        localStorage.removeItem('theme_bg_color'); 
-        localStorage.removeItem('font_size');
-        localStorage.removeItem('app_lang'); 
-        localStorage.removeItem('app_show_ms');
+        localStorage.clear(); // Быстрая очистка всех настроек
         location.reload();
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Инициализация UI-компонентов
+    // 1. Инициализация звука и вибрации
+    sm.init();
+
+    // 2. Инициализация компонентов
     sw.init(); tm.init(); tb.init(); navigation.init();
     
-    // 2. Инициализация темы и языка
+    // 3. Инициализация темы и языка
     themeManager.init(); langManager.init();
 
-    // 3. Биндинг навигации
+    // 4. Биндинг навигации
     document.querySelectorAll('[data-nav]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const viewId = e.currentTarget.getAttribute('data-nav');
@@ -57,12 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 4. Модалка сброса
+    // 5. Модалка сброса
     document.getElementById('btn-open-reset')?.addEventListener('click', () => resetModal.open());
     document.getElementById('reset-cancel')?.addEventListener('click', () => resetModal.close());
     document.getElementById('reset-confirm')?.addEventListener('click', () => resetModal.confirm());
 
-    // 5. ГЛОБАЛЬНЫЕ ГОРЯЧИЕ КЛАВИШИ (Desktop UX)
+    // 6. Глобальные горячие клавиши (Desktop)
     document.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
 

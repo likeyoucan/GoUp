@@ -1,9 +1,11 @@
-import { $, escapeHTML, showToast, formatTimeStr, adjustVal, updateText, updateTitle, vibrate, requestWakeLock, releaseWakeLock } from './utils.js';
+import { $, escapeHTML, showToast, formatTimeStr, adjustVal, updateText, updateTitle, requestWakeLock, releaseWakeLock } from './utils.js';
+import { sm } from './sound.js';
 import { t } from './i18n.js';
 
 export const tb = {
     workouts: [], selectedId: null, work: 20, rest: 10, rounds: 8, currentRound: 1,
     status: 'STOPPED', phaseDuration: 0, phaseEndTime: 0, remainingAtPause: 0, rAF: null, lastRender: 0, paused: false, els: {},
+    lastBeepSec: 0,
     
     init() {
         this.els = {
@@ -11,7 +13,7 @@ export const tb = {
             startBtn: $('tb-startBtn'), stopBtn: $('tb-stopBtn'), ring: $('tb-progressRing'), status: $('tb-statusText'), timer: $('tb-mainTimer'),
             activeName: $('tb-activeName'), activeDetail: $('tb-activeDetail'), roundDisplay: $('tb-currentRound'), totalRoundsDisplay: $('tb-totalRounds'),
             editName: $('tb-edit-name'), editWork: $('tb-edit-work'), editRest: $('tb-edit-rest'), editRounds: $('tb-edit-rounds'),
-            nameError: $('tb-name-error') // Поле ошибки
+            nameError: $('tb-name-error')
         };
 
         try {
@@ -34,7 +36,6 @@ export const tb = {
         $('tb-closeModalBtn')?.addEventListener('click', () => this.closeModal());
         $('tb-saveModalBtn')?.addEventListener('click', () => this.saveWorkout());
 
-        // Скрываем ошибку при вводе
         this.els.editName?.addEventListener('input', () => this.els.nameError?.classList.add('hidden'));
 
         document.querySelectorAll('[data-tb-adj]').forEach(btn => {
@@ -47,7 +48,6 @@ export const tb = {
         this.els.list?.addEventListener('click', (e) => {
             const delBtn = e.target.closest('.tb-del-btn');
             const row = e.target.closest('.tb-workout-row');
-            
             if (delBtn) {
                 e.stopPropagation();
                 this.deleteWorkout(Number(delBtn.dataset.id));
@@ -62,22 +62,16 @@ export const tb = {
         });
     },
 
-    // Генератор уникального имени
     getUniqueName(baseName) {
         let name = baseName;
         let counter = 1;
         const exists = (n) => this.workouts.some(w => w.name.toLowerCase() === n.toLowerCase());
-        
-        while (exists(name)) {
-            name = `${baseName} ${counter}`;
-            counter++;
-        }
+        while (exists(name)) { name = `${baseName} ${counter}`; counter++; }
         return name;
     },
     
     openModal() {
-        this.els.nameError?.classList.add('hidden'); // Сброс ошибки
-        
+        this.els.nameError?.classList.add('hidden');
         this.els.modal.classList.remove('hidden'); 
         this.els.modal.classList.add('flex');
         this.els.modal.removeAttribute('inert'); 
@@ -87,7 +81,6 @@ export const tb = {
             this.els.modal.classList.remove('opacity-0', 'translate-y-16');
         });
 
-        // Автоматически предлагаем уникальное имя
         this.els.editName.value = this.getUniqueName(t('tabata')); 
         this.els.editWork.value = 20; this.els.editRest.value = 10; this.els.editRounds.value = 8;
         setTimeout(() => this.els.editName.focus(), 100);
@@ -107,13 +100,12 @@ export const tb = {
         let finalName = this.els.editName.value.trim();
         if (!finalName) finalName = this.getUniqueName(t('tabata'));
 
-        // Проверка на дубликат
         const exists = this.workouts.some(w => w.name.toLowerCase() === finalName.toLowerCase());
         if (exists) {
             this.els.nameError?.classList.remove('hidden');
             this.els.editName.classList.add('animate-shake');
             setTimeout(() => this.els.editName.classList.remove('animate-shake'), 300);
-            return; // Прерываем сохранение
+            return;
         }
 
         const w = Math.max(1, parseInt(this.els.editWork.value) || 20);
@@ -164,7 +156,7 @@ export const tb = {
     },
     
     toggle() { 
-        vibrate(50);
+        sm.vibrate(50); sm.play('click');
         if (this.status === 'STOPPED') this.start(); 
         else if (this.paused) this.resume(); 
         else this.pause(); 
@@ -173,6 +165,7 @@ export const tb = {
     start() {
         this.currentRound = 1; this.status = "READY"; this.phaseDuration = 5000; 
         this.phaseEndTime = performance.now() + this.phaseDuration; this.paused = false;
+        this.lastBeepSec = 0;
         this.els.listSection.classList.add('hidden'); this.els.runningControls.classList.replace('hidden', 'flex');
         updateText(this.els.totalRoundsDisplay, this.rounds); 
         this.els.status.classList.remove('hidden'); 
@@ -192,12 +185,13 @@ export const tb = {
     resume() { 
         this.paused = false; 
         this.phaseEndTime = performance.now() + this.remainingAtPause; 
+        this.lastBeepSec = 0;
         requestWakeLock();
         this.tick(); this.updatePhaseStyles(); 
     },
     
     stop() {
-        vibrate(30);
+        sm.vibrate(30); sm.play('click');
         cancelAnimationFrame(this.rAF); this.status = "STOPPED"; this.paused = false;
         releaseWakeLock();
         updateTitle('');
@@ -217,16 +211,24 @@ export const tb = {
     },
     
     nextPhase() {
-        vibrate([100, 50, 100]); 
-        if (this.status === "READY") { this.status = "WORK"; this.phaseDuration = this.work; } 
-        else if (this.status === "WORK") { this.status = "REST"; this.phaseDuration = this.rest; } 
+        sm.vibrate([100, 50, 100]); 
+        this.lastBeepSec = 0;
+
+        if (this.status === "READY") { 
+            this.status = "WORK"; this.phaseDuration = this.work; sm.play('start'); 
+        } 
+        else if (this.status === "WORK") { 
+            this.status = "REST"; this.phaseDuration = this.rest; sm.play('rest'); 
+        } 
         else if (this.status === "REST") {
             if (this.currentRound >= this.rounds) { 
-                vibrate([200, 100, 200, 100, 400]); 
+                sm.vibrate([200, 100, 200, 100, 400]); 
+                sm.play('complete');
                 requestAnimationFrame(() => { showToast(t('tabata_complete')); this.stop(); }); 
                 return; 
             }
             this.currentRound++; this.status = "WORK"; this.phaseDuration = this.work;
+            sm.play('start');
         }
         this.phaseEndTime = performance.now() + this.phaseDuration; this.updatePhaseStyles(); this.tick();
     },
@@ -252,6 +254,12 @@ export const tb = {
     
     render(rem) {
         const sTotal = Math.max(0, Math.ceil(rem / 1000));
+        
+        if (sTotal <= 3 && sTotal > 0 && this.lastBeepSec !== sTotal) {
+            sm.play('tick');
+            this.lastBeepSec = sTotal;
+        }
+
         const timeStr = formatTimeStr(sTotal, false);
         updateText(this.els.timer, timeStr);
         updateTitle(`${this.status}: ${timeStr}`);

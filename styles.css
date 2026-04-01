@@ -45,7 +45,7 @@ body .text-4xl { font-size: calc(2.25rem * var(--font-scale)); line-height: 2.5;
    3. БАЗОВЫЕ НАСТРОЙКИ
 ========================================= */
 * {
-    /* Убираем синюю подсветку при клике на всех мобильных браузерах */
+    /* Убираем синюю подсветку при клике на тачскринах */
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -183,42 +183,17 @@ body .primary-focus-border:focus { border-color: var(--primary-color); }
 select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
 select option { background-color: var(--surface-color); color: var(--text-color); }
 
-/* Увеличенные ползунки (28x28px) для пальцев */
 input[type=range] { -webkit-appearance: none; background: transparent; }
 input[type=range]::-webkit-slider-thumb { 
-    -webkit-appearance: none; 
-    height: 28px; 
-    width: 28px; 
-    border-radius: 50%; 
-    background: var(--surface-color); 
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); 
-    border: 2px solid var(--primary-color); 
-    margin-top: -12px; 
+    -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: var(--surface-color); 
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); border: 2px solid var(--primary-color); margin-top: -12px; 
 }
-input[type=range]::-webkit-slider-runnable-track { 
-    width: 100%; 
-    height: 4px; 
-    cursor: pointer; 
-    background: var(--border-color); 
-    border-radius: 2px; 
-}
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: var(--border-color); border-radius: 2px; }
 input[type=range]::-moz-range-thumb { 
-    height: 28px; 
-    width: 28px; 
-    border-radius: 50%; 
-    background: var(--surface-color); 
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); 
-    border: 2px solid var(--primary-color); 
-    box-sizing: border-box; 
-    cursor: pointer; 
+    height: 28px; width: 28px; border-radius: 50%; background: var(--surface-color); 
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); border: 2px solid var(--primary-color); box-sizing: border-box; cursor: pointer; 
 }
-input[type=range]::-moz-range-track { 
-    width: 100%; 
-    height: 4px; 
-    cursor: pointer; 
-    background: var(--border-color); 
-    border-radius: 2px; 
-}
+input[type=range]::-moz-range-track { width: 100%; height: 4px; cursor: pointer; background: var(--border-color); border-radius: 2px; }
 
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
@@ -233,24 +208,18 @@ html.dark .custom-toggle { background-color: #374151; }
 body input:checked + .custom-toggle { background-color: var(--primary-color); }
 body input:checked + .custom-toggle::after { transform: translateX(20px); }
 
-/* Анимация вспышки при фиксации круга (Секундомер) */
+/* Анимация вспышки при фиксации круга */
 @keyframes flashCircle {
     0% { opacity: 0.4; transform: scale(0.98); }
     100% { opacity: 0; transform: scale(1); }
 }
+.flash-active { animation: flashCircle 0.5s ease-out; }
 
-.flash-active {
-    animation: flashCircle 0.5s ease-out;
-}
-
-/* Анимация ошибки валидации (Встряхивание поля ввода) */
+/* Анимация ошибки валидации (Встряхивание) */
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-4px); }
     50% { transform: translateX(4px); }
     75% { transform: translateX(-4px); }
 }
-
-.animate-shake {
-    animation: shake 0.3s ease-in-out;
-}
+.animate-shake { animation: shake 0.3s ease-in-out; }

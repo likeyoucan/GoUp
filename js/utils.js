@@ -2,22 +2,14 @@ export const $ = (id) => document.getElementById(id);
 
 export const escapeHTML = (str) => str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 
-// Оптимизация DOM: Обновляем textContent только если текст реально изменился
 export const updateText = (el, text) => {
     if (el && el.textContent !== String(text)) el.textContent = text;
 };
 
-// Динамический заголовок вкладки
 export const updateTitle = (text) => {
     document.title = text ? `${text} - Stopwatch Pro` : 'Stopwatch Pro';
 };
 
-// Виброотклик (работает только на мобильных)
-export const vibrate = (ms = 50) => {
-    if (navigator.vibrate) navigator.vibrate(ms);
-};
-
-// Wake Lock API (Удержание экрана включенным)
 let wakeLock = null;
 export const requestWakeLock = async () => {
     if ('wakeLock' in navigator && !wakeLock) {
@@ -30,7 +22,6 @@ export const releaseWakeLock = () => {
         wakeLock.release().then(() => { wakeLock = null; });
     }
 };
-// Восстановление Wake Lock при возврате на вкладку
 document.addEventListener('visibilitychange', async () => {
     if (wakeLock !== null && document.visibilityState === 'visible') {
         wakeLock = await navigator.wakeLock.request('screen');
