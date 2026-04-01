@@ -1,0 +1,41 @@
+import { langManager } from './i18n.js';
+import { themeManager } from './theme.js';
+import { navigation } from './navigation.js';
+import { adjustVal } from './utils.js';
+import { sw } from './stopwatch.js';
+import { tm } from './timer.js';
+import { tb } from './tabata.js';
+
+window.switchView = (id) => navigation.switchView(id);
+window.themeManager = themeManager;
+window.tb = tb;
+window.adjustVal = adjustVal;
+
+// Логика сброса настроек
+window.resetSettings = () => {
+    const msg = langManager.current === 'ru' 
+        ? "Сбросить настройки? (Ваши тренировки сохранятся)" 
+        : "Reset settings? (Your workouts will be saved)";
+        
+    if (confirm(msg)) {
+        // Удаляем только настройки интерфейса
+        localStorage.removeItem('theme_mode');
+        localStorage.removeItem('theme_color');
+        localStorage.removeItem('theme_bg_color');
+        localStorage.removeItem('font_size');
+        localStorage.removeItem('app_lang');
+        localStorage.removeItem('app_show_ms');
+        
+        // Перезагружаем страницу, чтобы применить дефолтные значения
+        location.reload();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    langManager.init();
+    themeManager.init();
+    navigation.init();
+    sw.init();
+    tm.init();
+    tb.init();
+});

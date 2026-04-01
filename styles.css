@@ -1,0 +1,207 @@
+/* =========================================
+   1. ПЕРЕМЕННЫЕ И ТЕМЫ
+========================================= */
+:root {
+    --primary-color: #22c55e;
+    --bg-color: #f3f4f6;
+    --surface-color: #ffffff;
+    --text-color: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    
+    /* Новая переменная: коэффициент масштаба шрифта (по умолчанию 1) */
+    --font-scale: 1; 
+}
+
+.dark {
+    --primary-color: #4ade80;
+    --bg-color: #000000;
+    --surface-color: #1c1c1e;
+    --text-color: #f9fafb;
+    --text-secondary: #9ca3af;
+    --border-color: #27272a;
+}
+
+html {
+    font-size: 16px; /* Жестко фиксируем, чтобы отступы Tailwind не "ехали" */
+    color-scheme: light;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+/* =========================================
+   2. МАСШТАБИРОВАНИЕ ТЕКСТА (БЕЗ ПОЛОМКИ ВЕРСТКИ)
+========================================= */
+/* Переопределяем текстовые классы Tailwind, чтобы они реагировали на наш ползунок */
+body { font-size: calc(1rem * var(--font-scale)); }
+body .text-xs { font-size: calc(0.75rem * var(--font-scale)); line-height: 1.2; }
+body .text-sm { font-size: calc(0.875rem * var(--font-scale)); line-height: 1.25; }
+body .text-base { font-size: calc(1rem * var(--font-scale)); line-height: 1.5; }
+body .text-lg { font-size: calc(1.125rem * var(--font-scale)); line-height: 1.75; }
+body .text-xl { font-size: calc(1.25rem * var(--font-scale)); line-height: 1.75; }
+body .text-2xl { font-size: calc(1.5rem * var(--font-scale)); line-height: 2; }
+body .text-4xl { font-size: calc(2.25rem * var(--font-scale)); line-height: 2.5; }
+
+/* =========================================
+   3. БАЗОВЫЕ НАСТРОЙКИ
+========================================= */
+body {
+    height: 100dvh;
+    background-color: #000;
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    overscroll-behavior: none; 
+
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+}
+
+input[type="text"], input[type="number"] {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* =========================================
+   4. КОНТЕЙНЕР И SAFE AREA
+========================================= */
+.relative.max-w-md {
+    height: 100dvh;
+    width: 100%;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}
+
+@media (min-width: 640px) {
+    .relative.max-w-md {
+        height: 92vh;
+        max-height: 850px;
+        padding: 0;
+    }
+}
+
+/* =========================================
+   5. ТАЙМЕРЫ (КРУГИ И ШРИФТЫ - НОВЫЙ ПОДХОД)
+========================================= */
+.relative.w-72.h-72 {
+    --circle-size: min(70vw, 280px);
+    width: var(--circle-size);
+    height: var(--circle-size);
+}
+
+/* Базовый стиль для цифр (00:00.00) */
+.timer-display {
+    font-size: clamp(2rem, 11vw, 2.8rem);
+    line-height: 1;
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    font-style: normal;
+}
+
+/* Стиль для состояния "GO" (Огромный курсив) */
+.timer-display.is-go {
+    font-size: clamp(3rem, 18vw, 4.8rem);
+    font-style: italic;
+    padding-right: 0.1em; /* Чтобы курсив не обрезался */
+}
+
+/* =========================================
+   6. ИДЕАЛЬНАЯ ГОРИЗОНТАЛЬНАЯ ОРИЕНТАЦИЯ
+========================================= */
+@media (orientation: landscape) and (max-height: 900px) {
+    body .relative.max-w-md { max-width: 900px; }
+    
+    body #viewsContainer > div:not(#view-settings) {
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        padding-bottom: 0;
+    }
+
+    body #viewsContainer > div:not(#view-settings) > .h-\[55\%\] { height: auto; width: 45%; flex: none; }
+    body #viewsContainer > div:not(#view-settings) > .h-\[45\%\] { height: 90%; width: 45%; flex: none; justify-content: center; }
+
+    body .relative.w-72.h-72 { --circle-size: min(70vh, 260px); }
+    body h2 { margin-bottom: 0.5rem; }
+    body #view-settings { flex-direction: column; }
+}
+
+/* АДАПТИВ ДЛЯ ВЕРТИКАЛЬНЫХ МАЛЕНЬКИХ ЭКРАНОВ */
+@media (max-height: 700px) and (orientation: portrait) {
+    body .relative.w-72.h-72 { --circle-size: min(45vh, 220px); }
+    body h2 { margin-bottom: 0.5rem; margin-top: 0; }
+    body .mb-4 { margin-bottom: 0.5rem; }
+    body .mb-8 { margin-bottom: 1rem; }
+    body .pt-4 { padding-top: 0.5rem; }
+    body .h-\[55\%\] { height: 48%; }
+    body .h-\[45\%\] { height: 52%; }
+    body #tm-h, body #tm-m, body #tm-s { width: 3rem; height: 3rem; font-size: 2rem; }
+    
+    /* Уменьшаем шрифты таймера */
+    body .timer-display { font-size: clamp(1.6rem, 9vw, 2.2rem); }
+    body .timer-display.is-go { font-size: clamp(2.5rem, 15vw, 3.8rem); }
+}
+
+/* =========================================
+   7. УТИЛИТЫ И ЦВЕТА (ПОВЫШЕННАЯ СПЕЦИФИЧНОСТЬ)
+========================================= */
+body .app-bg { background-color: var(--bg-color); transition: background-color 0.3s; }
+body .app-surface { background-color: var(--surface-color); transition: background-color 0.3s; }
+body .app-text { color: var(--text-color); transition: color 0.3s;}
+body .app-text-sec { color: var(--text-secondary); transition: color 0.3s;}
+body .app-border { border-color: var(--border-color); transition: border-color 0.3s; }
+
+body .primary-text { color: var(--primary-color); transition: color 0.3s; }
+body .primary-bg { background-color: var(--primary-color); transition: background-color 0.3s; }
+body .primary-stroke { stroke: var(--primary-color); transition: stroke 0.3s; }
+
+body .focus-visible\:ring-\[var\(--primary-color\)\]:focus-visible { --tw-ring-color: var(--primary-color); }
+body .primary-focus-border:focus { border-color: var(--primary-color); }
+
+.progress-ring__circle { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+#sw-lapsContainer, #tb-workoutsList { scrollbar-gutter: stable; }
+
+/* =========================================
+   8. КАСТОМИЗАЦИЯ ЭЛЕМЕНТОВ УПРАВЛЕНИЯ
+========================================= */
+select { -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+select option { background-color: var(--surface-color); color: var(--text-color); }
+
+input[type=range] { -webkit-appearance: none; background: transparent; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--surface-color); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); border: 2px solid var(--primary-color); margin-top: -8px; }
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: var(--border-color); border-radius: 2px; }
+input[type=range]::-moz-range-thumb { height: 20px; width: 20px; border-radius: 50%; background: var(--surface-color); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); border: 2px solid var(--primary-color); box-sizing: border-box; cursor: pointer; }
+input[type=range]::-moz-range-track { width: 100%; height: 4px; cursor: pointer; background: var(--border-color); border-radius: 2px; }
+
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; }
+
+/* КАСТОМНЫЙ ПЕРЕКЛЮЧАТЕЛЬ МИЛЛИСЕКУНД */
+.custom-toggle {
+    width: 44px; height: 24px; background-color: #e5e7eb; border-radius: 9999px; position: relative; transition: background-color 0.3s ease;
+}
+html.dark .custom-toggle { background-color: #374151; }
+.custom-toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background-color: #ffffff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+body input:checked + .custom-toggle { background-color: var(--primary-color); }
+body input:checked + .custom-toggle::after { transform: translateX(20px); }
