@@ -3,14 +3,20 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Stopwatch Pro - Browser based timer and Tabata interval app">
     <title>Stopwatch Pro</title>
 
+    <!-- Tailwind (Для продакшена скомпилируйте CSS локально и удалите этот скрипт) -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="flex items-center justify-center h-[100dvh] w-screen overflow-hidden bg-black text-base">
+<body class="flex items-center justify-center h-[100dvh] w-screen overflow-hidden bg-black text-base select-none">
+
+    <noscript class="absolute z-50 bg-white text-black p-4 rounded-xl top-10 font-bold shadow-2xl">
+        Please enable JavaScript to use Stopwatch Pro.
+    </noscript>
 
     <!-- Toast Notification -->
     <div id="toast"
@@ -22,18 +28,19 @@
     </div>
 
     <!-- Main App Container -->
-    <div
+    <div id="app"
         class="relative w-full max-w-md h-full sm:h-[92vh] sm:rounded-[3rem] overflow-hidden flex flex-col bg-black sm:border-8 sm:border-gray-900 shadow-2xl">
         <div class="app-bg absolute inset-0 flex flex-col w-full h-full z-0">
 
-            <div class="h-12 shrink-0 w-full flex justify-between items-end px-6 pb-2 select-none z-20 app-text">
+            <!-- Header Clock -->
+            <header class="h-12 shrink-0 w-full flex justify-between items-end px-6 pb-2 z-20 app-text">
                 <span class="text-xs font-semibold opacity-80 tabular-nums w-12" id="clock">12:00</span>
                 <div class="flex gap-1 opacity-80">
                     <div class="w-4 h-2.5 bg-current rounded-[2px] border border-current"></div>
                 </div>
-            </div>
+            </header>
 
-            <div class="flex-1 relative overflow-hidden" id="viewsContainer">
+            <main class="flex-1 relative overflow-hidden" id="viewsContainer">
 
                 <!-- =========================================
                      STOPWATCH VIEW
@@ -53,10 +60,18 @@
                             </svg>
                             <button id="sw-startStopBtn" aria-label="Start or Stop Stopwatch"
                                 class="absolute inset-0 flex flex-col items-center justify-center rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--primary-color)] group active:scale-95 transition-transform overflow-hidden cursor-pointer">
+
+                                <!-- НОВЫЙ ЭЛЕМЕНТ: Фон для вспышки (использует акцентный цвет) -->
+                                <div id="sw-lapFlash"
+                                    class="absolute inset-0 rounded-full primary-bg opacity-0 pointer-events-none">
+                                </div>
+
+                                <!-- Добавлены классы relative и z-10 к тексту -->
                                 <span id="sw-statusText" data-i18n="pause"
-                                    class="hidden text-sm font-bold tracking-widest uppercase mb-1 app-text-sec">PAUSE</span>
+                                    class="hidden text-sm font-bold tracking-widest uppercase mb-1 app-text-sec relative z-10">PAUSE</span>
                                 <span id="sw-mainDisplay"
-                                    class="font-mono font-bold tracking-tighter tabular-nums primary-text timer-display is-go">GO</span>
+                                    class="font-mono font-bold tracking-tighter tabular-nums primary-text timer-display is-go relative z-10">GO</span>
+
                             </button>
                         </div>
                     </div>
@@ -80,7 +95,6 @@
                                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12">
                                             </path>
                                         </svg>
-
                                     </button>
                                     <button id="sw-openResultsBtn"
                                         class="p-2 text-gray-400 hover:primary-text transition-colors focus:outline-none"
@@ -101,13 +115,13 @@
                         </div>
                     </div>
 
-                    <!-- Модальное окно сохраненных результатов (Анимация выезжания) -->
+                    <!-- Stopwatch: Saved Results Modal -->
                     <div id="sw-sessions-modal" inert aria-hidden="true"
-                        class="hidden absolute inset-0 z-40 app-bg flex flex-col p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-12">
+                        class="hidden absolute inset-0 z-40 app-bg flex flex-col p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-[70px]">
                         <div class="flex justify-between items-center mb-6 shrink-0">
                             <h2 class="text-2xl font-bold app-text" data-i18n="saved_results">Saved Results</h2>
                             <button id="sw-closeResultsBtn" aria-label="Close modal"
-                                class="text-gray-500 p-2 text-xl focus:outline-none focus-visible:ring-2">&times;</button>
+                                class="text-gray-500 p-2 text-xl focus:outline-none">&times;</button>
                         </div>
 
                         <div class="mb-4 shrink-0 flex items-center justify-between">
@@ -128,14 +142,13 @@
                                 </svg>
                             </div>
                         </div>
-
                         <div class="flex-1 overflow-y-auto no-scrollbar pb-10 space-y-3" id="sw-sessionsList"></div>
                     </div>
 
-                    <!-- Универсальное окно для имени сессии (Всплывает чуть ниже центра) -->
+                    <!-- Stopwatch: Session Name Modal -->
                     <div id="sw-name-modal" inert aria-hidden="true"
-                        class="hidden absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-6 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0">
-                        <div class="app-surface w-full max-w-sm rounded-3xl p-6 shadow-2xl border app-border flex flex-col gap-4 transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-12"
+                        class="hidden absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-6 transition-opacity duration-500 opacity-0">
+                        <div class="app-surface w-full max-w-sm rounded-3xl p-6 shadow-2xl border app-border flex flex-col gap-4 transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-[70px]"
                             id="sw-name-modal-content">
                             <h3 id="sw-name-title" class="text-xl font-bold app-text" data-i18n="session_name">Session
                                 Name</h3>
@@ -182,19 +195,22 @@
                     <div class="h-[45%] w-full flex flex-col items-center justify-start pt-4 shrink-0">
                         <div id="tm-inputs" class="flex items-center gap-2 transition-all duration-300">
                             <div class="flex flex-col items-center">
-                                <input type="number" aria-label="Hours" id="tm-h" placeholder="00"
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Hours" id="tm-h"
+                                    placeholder="00"
                                     class="w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
                                 <span class="text-[10px] mt-1 font-bold opacity-50" data-i18n="hr">HR</span>
                             </div>
                             <span class="text-2xl opacity-30 pb-4">:</span>
                             <div class="flex flex-col items-center">
-                                <input type="number" aria-label="Minutes" id="tm-m" placeholder="00"
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Minutes" id="tm-m"
+                                    placeholder="00"
                                     class="w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
                                 <span class="text-[10px] mt-1 font-bold opacity-50" data-i18n="min">MIN</span>
                             </div>
                             <span class="text-2xl opacity-30 pb-4">:</span>
                             <div class="flex flex-col items-center">
-                                <input type="number" aria-label="Seconds" id="tm-s" placeholder="00"
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Seconds" id="tm-s"
+                                    placeholder="00"
                                     class="w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
                                 <span class="text-[10px] mt-1 font-bold opacity-50" data-i18n="sec">SEC</span>
                             </div>
@@ -238,7 +254,7 @@
                             <div class="flex justify-between items-center mb-2 px-2 shrink-0">
                                 <h3 class="text-xs font-bold app-text-sec uppercase tracking-wider"
                                     data-i18n="my_workouts">My Workouts</h3>
-                                <button onclick="tb.openModal()"
+                                <button id="tb-openModalBtn"
                                     class="text-xs font-bold primary-text uppercase tracking-wider p-2 active:opacity-50 focus:outline-none focus-visible:underline"
                                     data-i18n="create_new">+ New</button>
                             </div>
@@ -257,13 +273,13 @@
                         </div>
                     </div>
 
-                    <!-- Tabata Create Modal (С новой плавной анимацией) -->
+                    <!-- Tabata Create Modal -->
                     <div id="tb-modal" inert aria-hidden="true"
-                        class="hidden absolute inset-0 z-50 app-bg flex flex-col p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-12">
+                        class="hidden absolute inset-0 z-50 app-bg flex flex-col p-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-[70px]">
                         <div class="flex justify-between items-center mb-8">
                             <h2 class="text-2xl font-bold app-text" data-i18n="create_workout">Create Workout</h2>
-                            <button onclick="tb.closeModal()" aria-label="Close modal"
-                                class="text-gray-500 p-2 text-xl focus:outline-none focus-visible:ring-2">&times;</button>
+                            <button id="tb-closeModalBtn" aria-label="Close modal"
+                                class="text-gray-500 p-2 text-xl focus:outline-none">&times;</button>
                         </div>
                         <div class="space-y-6 overflow-y-auto flex-1 no-scrollbar pb-10">
                             <div>
@@ -277,28 +293,26 @@
                                 <div><span class="block text-lg font-bold app-text" data-i18n="work">Work</span><span
                                         class="text-xs app-text-sec" data-i18n="sec">SEC</span></div>
                                 <div class="flex items-center gap-3">
-                                    <button aria-label="Decrease work time"
-                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90"
-                                        onclick="adjustVal('tb-edit-work', -5)">−</button>
-                                    <input type="number" aria-label="Work time in seconds" id="tb-edit-work" value="20"
+                                    <button aria-label="Decrease work time" data-tb-adj="tb-edit-work,-5"
+                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">−</button>
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*"
+                                        aria-label="Work time in seconds" id="tb-edit-work" value="20"
                                         class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
-                                    <button aria-label="Increase work time"
-                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90"
-                                        onclick="adjustVal('tb-edit-work', 5)">+</button>
+                                    <button aria-label="Increase work time" data-tb-adj="tb-edit-work,5"
+                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">+</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
                                 <div><span class="block text-lg font-bold app-text" data-i18n="rest">Rest</span><span
                                         class="text-xs app-text-sec" data-i18n="sec">SEC</span></div>
                                 <div class="flex items-center gap-3">
-                                    <button aria-label="Decrease rest time"
-                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90"
-                                        onclick="adjustVal('tb-edit-rest', -5)">−</button>
-                                    <input type="number" aria-label="Rest time in seconds" id="tb-edit-rest" value="10"
+                                    <button aria-label="Decrease rest time" data-tb-adj="tb-edit-rest,-5"
+                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">−</button>
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*"
+                                        aria-label="Rest time in seconds" id="tb-edit-rest" value="10"
                                         class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
-                                    <button aria-label="Increase rest time"
-                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90"
-                                        onclick="adjustVal('tb-edit-rest', 5)">+</button>
+                                    <button aria-label="Increase rest time" data-tb-adj="tb-edit-rest,5"
+                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">+</button>
                                 </div>
                             </div>
                             <div class="flex justify-between items-center">
@@ -306,17 +320,16 @@
                                         data-i18n="rounds">Rounds</span><span class="text-xs app-text-sec"
                                         data-i18n="count">COUNT</span></div>
                                 <div class="flex items-center gap-3">
-                                    <button aria-label="Decrease rounds"
-                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90"
-                                        onclick="adjustVal('tb-edit-rounds', -1)">−</button>
-                                    <input type="number" aria-label="Number of rounds" id="tb-edit-rounds" value="8"
+                                    <button aria-label="Decrease rounds" data-tb-adj="tb-edit-rounds,-1"
+                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">−</button>
+                                    <input type="text" inputmode="numeric" pattern="[0-9]*"
+                                        aria-label="Number of rounds" id="tb-edit-rounds" value="8"
                                         class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
-                                    <button aria-label="Increase rounds"
-                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90"
-                                        onclick="adjustVal('tb-edit-rounds', 1)">+</button>
+                                    <button aria-label="Increase rounds" data-tb-adj="tb-edit-rounds,1"
+                                        class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">+</button>
                                 </div>
                             </div>
-                            <button onclick="tb.saveWorkout()"
+                            <button id="tb-saveModalBtn"
                                 class="w-full primary-bg text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform mt-8 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                                 data-i18n="save">Save</button>
                         </div>
@@ -342,48 +355,41 @@
                                     <span class="font-medium app-text text-sm" data-i18n="theme">Theme</span>
                                     <div class="flex app-bg rounded-lg p-1 border app-border">
                                         <button
-                                            class="px-3 py-1.5 rounded-md text-xs font-bold transition-all focus:outline-none focus-visible:ring-2"
-                                            id="theme-system" onclick="themeManager.setMode('system')">Auto</button>
+                                            class="px-3 py-1.5 rounded-md text-xs font-bold transition-all focus:outline-none"
+                                            id="theme-system" data-theme-mode="system">Auto</button>
                                         <button
-                                            class="px-3 py-1.5 rounded-md text-xs font-bold transition-all focus:outline-none focus-visible:ring-2"
-                                            id="theme-light" onclick="themeManager.setMode('light')">Light</button>
+                                            class="px-3 py-1.5 rounded-md text-xs font-bold transition-all focus:outline-none"
+                                            id="theme-light" data-theme-mode="light">Light</button>
                                         <button
-                                            class="px-3 py-1.5 rounded-md text-xs font-bold transition-all focus:outline-none focus-visible:ring-2"
-                                            id="theme-dark" onclick="themeManager.setMode('dark')">Dark</button>
+                                            class="px-3 py-1.5 rounded-md text-xs font-bold transition-all focus:outline-none"
+                                            id="theme-dark" data-theme-mode="dark">Dark</button>
                                     </div>
                                 </div>
                                 <div class="p-4 border-b app-border">
                                     <span class="block font-medium app-text text-sm mb-3"
                                         data-i18n="accent_color">Accent Color</span>
                                     <div class="flex gap-4 overflow-x-auto no-scrollbar py-2 px-2 -mx-2">
-                                        <button aria-label="Green Accent Color" data-color="#22c55e"
-                                            onclick="themeManager.setColor('#22c55e')"
-                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-green-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500"></button>
-                                        <button aria-label="Blue Accent Color" data-color="#3b82f6"
-                                            onclick="themeManager.setColor('#3b82f6')"
-                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"></button>
-                                        <button aria-label="Purple Accent Color" data-color="#a855f7"
-                                            onclick="themeManager.setColor('#a855f7')"
-                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-purple-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"></button>
-                                        <button aria-label="Pink Accent Color" data-color="#ec4899"
-                                            onclick="themeManager.setColor('#ec4899')"
-                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-pink-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500"></button>
-                                        <button aria-label="Orange Accent Color" data-color="#f97316"
-                                            onclick="themeManager.setColor('#f97316')"
-                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-orange-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-orange-500"></button>
-                                        <button aria-label="Red Accent Color" data-color="#ef4444"
-                                            onclick="themeManager.setColor('#ef4444')"
-                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-red-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"></button>
+                                        <button aria-label="Green Accent" data-color="#22c55e"
+                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-green-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
+                                        <button aria-label="Blue Accent" data-color="#3b82f6"
+                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
+                                        <button aria-label="Purple Accent" data-color="#a855f7"
+                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-purple-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
+                                        <button aria-label="Pink Accent" data-color="#ec4899"
+                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-pink-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
+                                        <button aria-label="Orange Accent" data-color="#f97316"
+                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-orange-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
+                                        <button aria-label="Red Accent" data-color="#ef4444"
+                                            class="color-btn w-9 h-9 flex items-center justify-center rounded-full bg-red-500 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <div class="relative w-9 h-9 shrink-0 group">
                                             <button id="customColorBtn" aria-label="Custom Accent Color"
-                                                class="w-full h-full flex items-center justify-center rounded-full border-2 border-transparent overflow-hidden transition-transform active:scale-90 relative z-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+                                                class="w-full h-full flex items-center justify-center rounded-full border-2 border-transparent overflow-hidden transition-transform active:scale-90 relative z-0 focus:outline-none">
                                                 <div
                                                     class="absolute inset-0 bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)] opacity-90 group-hover:opacity-100 transition-opacity">
                                                 </div>
                                             </button>
-                                            <input type="color" aria-label="Pick Custom Color"
-                                                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                                                onchange="themeManager.setColor(this.value)">
+                                            <input type="color" id="customColorInput" aria-label="Pick Custom Color"
+                                                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
                                         </div>
                                     </div>
                                 </div>
@@ -392,36 +398,29 @@
                                         data-i18n="bg_color">Background Color</span>
                                     <div class="flex gap-4 overflow-x-auto no-scrollbar py-2 px-2 -mx-2">
                                         <button aria-label="Default Background" data-bg="default"
-                                            onclick="themeManager.setBgColor('default')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-[#e5e7eb] dark:bg-[#111827] shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 relative"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-[#e5e7eb] dark:bg-[#111827] shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none relative"></button>
                                         <button aria-label="Blue Background" data-bg="#60a5fa"
-                                            onclick="themeManager.setBgColor('#60a5fa')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-blue-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-blue-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <button aria-label="Purple Background" data-bg="#c084fc"
-                                            onclick="themeManager.setBgColor('#c084fc')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-purple-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-purple-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <button aria-label="Pink Background" data-bg="#f472b6"
-                                            onclick="themeManager.setBgColor('#f472b6')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-pink-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-pink-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <button aria-label="Emerald Background" data-bg="#34d399"
-                                            onclick="themeManager.setBgColor('#34d399')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-emerald-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-emerald-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <button aria-label="Yellow Background" data-bg="#facc15"
-                                            onclick="themeManager.setBgColor('#facc15')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-yellow-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-yellow-500"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-yellow-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <button aria-label="Red Background" data-bg="#f87171"
-                                            onclick="themeManager.setBgColor('#f87171')"
-                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-red-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500"></button>
+                                            class="bg-btn w-9 h-9 flex items-center justify-center rounded-full bg-red-400 shrink-0 transition-transform active:scale-90 border-2 border-transparent focus:outline-none"></button>
                                         <div class="relative w-9 h-9 shrink-0 group">
                                             <button id="customBgBtn" aria-label="Custom Background Color"
-                                                class="w-full h-full flex items-center justify-center rounded-full border-2 border-transparent overflow-hidden transition-transform active:scale-90 relative z-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+                                                class="w-full h-full flex items-center justify-center rounded-full border-2 border-transparent overflow-hidden transition-transform active:scale-90 relative z-0 focus:outline-none">
                                                 <div
                                                     class="absolute inset-0 bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)] opacity-50 group-hover:opacity-100 transition-opacity">
                                                 </div>
                                             </button>
-                                            <input type="color" aria-label="Pick Custom Background Color"
-                                                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                                                onchange="themeManager.setBgColor(this.value)">
+                                            <input type="color" id="customBgInput"
+                                                aria-label="Pick Custom Background Color"
+                                                class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
                                         </div>
                                     </div>
                                 </div>
@@ -467,7 +466,7 @@
                                     </label>
                                 </div>
                                 <div class="flex items-center justify-center p-4 border-t app-border mt-4">
-                                    <button onclick="resetSettings()"
+                                    <button id="btn-open-reset"
                                         class="text-red-500 font-bold text-xs tracking-widest uppercase active:scale-95 transition-transform focus:outline-none focus-visible:underline"
                                         data-i18n="reset_settings">
                                         Reset to Defaults
@@ -478,14 +477,33 @@
                     </div>
                 </div>
 
-            </div>
+                <!-- Settings: Reset Modal -->
+                <div id="reset-modal" inert aria-hidden="true"
+                    class="hidden absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-6 transition-opacity duration-500 opacity-0">
+                    <div class="app-surface w-full max-w-sm rounded-3xl p-6 shadow-2xl border app-border flex flex-col gap-4 transform transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-0 translate-y-[70px]"
+                        id="reset-modal-content">
+                        <h3 class="text-xl font-bold text-red-500" data-i18n="reset_settings">Reset to Defaults</h3>
+                        <p class="app-text-sec text-sm font-medium leading-relaxed" data-i18n="reset_confirm_msg">Are
+                            you sure? Your saved workouts will not be deleted.</p>
+                        <div class="flex justify-end gap-3 mt-4">
+                            <button id="reset-cancel"
+                                class="px-5 py-2.5 rounded-xl font-bold app-text-sec active:scale-95 transition-transform"
+                                data-i18n="cancel">Cancel</button>
+                            <button id="reset-confirm"
+                                class="px-5 py-2.5 rounded-xl font-bold text-white bg-red-500 shadow-lg active:scale-95 transition-transform"
+                                data-i18n="reset">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
 
             <!-- =========================================
                  BOTTOM NAVIGATION
             ========================================= -->
-            <div
+            <nav
                 class="h-20 shrink-0 w-full flex justify-between items-center px-4 bg-transparent pb-4 z-30 border-t app-border sm:border-t-0">
-                <button onclick="switchView('stopwatch')"
+                <button data-nav="stopwatch"
                     class="nav-btn w-16 h-full flex flex-col items-center justify-center gap-1 group active:scale-90 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] rounded-xl">
                     <div class="relative w-7 h-7 flex items-center justify-center transition-colors text-gray-400 group-hover:text-gray-500"
                         id="nav-icon-stopwatch">
@@ -501,7 +519,7 @@
                     <span class="text-[10px] font-bold text-gray-400 transition-colors"
                         data-i18n="stopwatch">Stopwatch</span>
                 </button>
-                <button onclick="switchView('timer')"
+                <button data-nav="timer"
                     class="nav-btn w-16 h-full flex flex-col items-center justify-center gap-1 group active:scale-90 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] rounded-xl">
                     <div class="relative w-7 h-7 flex items-center justify-center transition-colors text-gray-400 group-hover:text-gray-500"
                         id="nav-icon-timer">
@@ -513,7 +531,7 @@
                     </div>
                     <span class="text-[10px] font-bold text-gray-400 transition-colors" data-i18n="timer">Timer</span>
                 </button>
-                <button onclick="switchView('tabata')"
+                <button data-nav="tabata"
                     class="nav-btn w-16 h-full flex flex-col items-center justify-center gap-1 group active:scale-90 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] rounded-xl">
                     <div class="relative w-7 h-7 flex items-center justify-center transition-colors text-gray-400 group-hover:text-gray-500"
                         id="nav-icon-tabata">
@@ -525,7 +543,7 @@
                     </div>
                     <span class="text-[10px] font-bold text-gray-400 transition-colors" data-i18n="tabata">Tabata</span>
                 </button>
-                <button onclick="switchView('settings')"
+                <button data-nav="settings"
                     class="nav-btn w-16 h-full flex flex-col items-center justify-center gap-1 group active:scale-90 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] rounded-xl">
                     <div class="relative w-7 h-7 flex items-center justify-center transition-colors text-gray-400 group-hover:text-gray-500"
                         id="nav-icon-settings">
@@ -540,7 +558,7 @@
                     <span class="text-[10px] font-bold text-gray-400 transition-colors"
                         data-i18n="settings">Settings</span>
                 </button>
-            </div>
+            </nav>
         </div>
     </div>
 

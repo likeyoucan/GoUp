@@ -197,3 +197,13 @@ html.dark .custom-toggle { background-color: #374151; }
 }
 body input:checked + .custom-toggle { background-color: var(--primary-color); }
 body input:checked + .custom-toggle::after { transform: translateX(20px); }
+
+/* Анимация вспышки при фиксации круга */
+@keyframes flashCircle {
+    0% { opacity: 0.4; transform: scale(0.98); }
+    100% { opacity: 0; transform: scale(1); }
+}
+
+.flash-active {
+    animation: flashCircle 0.5s ease-out;
+}

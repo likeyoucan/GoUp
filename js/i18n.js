@@ -1,5 +1,3 @@
-import { t as translationFunc } from './i18n.js'; // Dummy import block to avoid conflict in bundler context
-
 export const translations = {
     en: {
         stopwatch: "Stopwatch", timer: "Timer", tabata: "Tabata", settings: "Settings",
@@ -15,13 +13,14 @@ export const translations = {
         save_session: "Save Session", saved_results: "Saved Results", sort_by: "Sort by:",
         date_new: "Newest first", date_old: "Oldest first", name_az: "Name (A-Z)", result_fast: "Result (Fastest)",
         empty_sessions: "No saved sessions", session_saved: "Session saved!", enter_name: "Enter session name:",
-        rename: "Rename", delete: "Delete", cancel: "Cancel", session_name: "Session Name"
+        rename: "Rename", delete: "Delete", cancel: "Cancel", session_name: "Session Name",
+        reset_confirm_msg: "Are you sure? Your saved workouts will not be deleted."
     },
     ru: {
         stopwatch: "Секундомер", timer: "Таймер", tabata: "Табата", settings: "Настройки",
         pause: "ПАУЗА", lap: "Круг", reset: "Сброс", laps_history: "История кругов", no_laps: "Нет записей",
         countdown: "Таймер", hr: "Ч", min: "МИН", sec: "СЕК", tabata_interval: "Интервалы",
-        my_workouts: "Мои тренировки", create_new: "+ Своя", round: "РАУНД", stop: "СТОП",
+        my_workouts: "Мои тренировки", create_new: "+ Своя", round: "РАУНД", stop: "ЗАВЕРШИТЬ",
         create_workout: "Создать", name: "Название", work: "Работа", rest: "Отдых", rounds: "Раунды",
         count: "СЧЕТ", save: "Сохранить", appearance: "Внешний вид", language: "Язык", theme: "Тема",
         accent_color: "Цвет акцента", bg_color: "Цвет фона", interface: "Общие", font_size: "Размер шрифта",
@@ -31,7 +30,8 @@ export const translations = {
         save_session: "Сохранить", saved_results: "Сохраненные результаты", sort_by: "Сортировка:",
         date_new: "Сначала новые", date_old: "Сначала старые", name_az: "По имени (А-Я)", result_fast: "По результату",
         empty_sessions: "Нет сохраненных результатов", session_saved: "Сохранено!", enter_name: "Введите название:",
-        rename: "Изменить", delete: "Удалить", cancel: "Отмена", session_name: "Имя сессии"
+        rename: "Изменить", delete: "Удалить", cancel: "Отмена", session_name: "Имя сессии",
+        reset_confirm_msg: "Вы уверены? Ваши тренировки не будут удалены."
     }
 };
 
@@ -62,11 +62,13 @@ export const langManager = {
         if (!isAuto) localStorage.setItem('app_lang', lang);
         const ls = document.getElementById('langSelect');
         if(ls) ls.value = isAuto ? 'auto' : lang;
+        
         document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
         
-        if(window.sw && typeof window.sw.renderSavedSessions === 'function') {
+        if (window.sw && typeof window.sw.renderSavedSessions === 'function') {
             window.sw.renderSavedSessions();
         }
     }
 };
+
 export const t = (key) => translations[langManager.current][key] || key;

@@ -6,7 +6,6 @@ export const themeManager = {
         this.setMode(localStorage.getItem('theme_mode') || 'system');
         this.setColor(localStorage.getItem('theme_color') || '#22c55e');
         this.setBgColor(localStorage.getItem('theme_bg_color') || 'default');
-        
         this.setFontSize(localStorage.getItem('font_size') || 16); 
 
         this.showMs = localStorage.getItem('app_show_ms') !== 'false';
@@ -16,15 +15,32 @@ export const themeManager = {
             toggle.addEventListener('change', (e) => {
                 this.showMs = e.target.checked;
                 localStorage.setItem('app_show_ms', this.showMs);
-                if (window.sw && !window.sw.isRunning) window.sw.updateDisplay();
+                if (window.sw && !window.sw.isRunning && window.sw.updateDisplay) {
+                    window.sw.updateDisplay();
+                }
             });
         }
 
-        $('fontSlider').addEventListener('input', (e) => this.setFontSize(e.target.value));
+        $('fontSlider')?.addEventListener('input', (e) => this.setFontSize(e.target.value));
+        
+        document.querySelectorAll('[data-theme-mode]').forEach(btn => {
+            btn.addEventListener('click', (e) => this.setMode(e.target.getAttribute('data-theme-mode')));
+        });
+        document.querySelectorAll('[data-color]').forEach(btn => {
+            btn.addEventListener('click', (e) => this.setColor(e.target.getAttribute('data-color')));
+        });
+        document.querySelectorAll('[data-bg]').forEach(btn => {
+            btn.addEventListener('click', (e) => this.setBgColor(e.target.getAttribute('data-bg')));
+        });
+
+        $('customColorInput')?.addEventListener('change', (e) => this.setColor(e.target.value));
+        $('customBgInput')?.addEventListener('change', (e) => this.setBgColor(e.target.value));
+
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
             if (this.currentMode === 'system') this.setMode('system');
         });
     },
+    
     setMode(mode) {
         this.currentMode = mode; localStorage.setItem('theme_mode', mode);
         document.querySelectorAll('[id^="theme-"]').forEach(b => { b.classList.remove('app-surface', 'shadow-sm', 'app-text'); b.classList.add('app-text-sec'); });
@@ -57,6 +73,7 @@ export const themeManager = {
             } else { b.classList.add('border-transparent'); b.innerHTML = ''; }
         });
         const picker = $(customId);
+        if(!picker) return;
         picker.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-white', 'dark:ring-offset-gray-900', 'border-white');
         if (!found && hex !== 'default') {
             picker.classList.add('ring-2', 'ring-offset-2', 'ring-offset-white', 'dark:ring-offset-gray-900');
@@ -87,8 +104,10 @@ export const themeManager = {
     setFontSize(size) {
         const scale = size / 16;
         document.documentElement.style.setProperty('--font-scale', scale);
-        $('fontSizeDisplay').textContent = size + ' px'; 
-        $('fontSlider').value = size; 
+        const display = $('fontSizeDisplay');
+        if(display) display.textContent = size + ' px'; 
+        const slider = $('fontSlider');
+        if(slider) slider.value = size; 
         localStorage.setItem('font_size', size);
     }
 };
