@@ -36,13 +36,13 @@ export const tm = {
         this.els.h.value = ''; this.els.m.value = ''; this.els.s.value = '';
         this.updateUIState(); this.els.ring.style.strokeDashoffset = 282.74;
         this.els.display.textContent = 'GO'; 
-        this.els.display.classList.add('is-go'); // Вернули GO
+        this.els.display.classList.add('is-go');
     },
 
     updateUIState() {
         if (this.isRunning) {
             this.els.inputs.classList.add('hidden', 'opacity-0'); this.els.resetBtn.classList.add('hidden'); this.els.status.classList.add('hidden'); 
-            this.els.display.classList.remove('is-go'); // Убрали GO при старте
+            this.els.display.classList.remove('is-go');
         } else if (this.isPaused) {
             this.els.inputs.classList.add('hidden', 'opacity-0'); this.els.resetBtn.classList.remove('hidden'); this.els.status.classList.remove('hidden'); this.els.status.textContent = t('pause'); 
         } else {

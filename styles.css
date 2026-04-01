@@ -8,8 +8,6 @@
     --text-color: #1f2937;
     --text-secondary: #6b7280;
     --border-color: #e5e7eb;
-    
-    /* Новая переменная: коэффициент масштаба шрифта (по умолчанию 1) */
     --font-scale: 1; 
 }
 
@@ -23,7 +21,7 @@
 }
 
 html {
-    font-size: 16px; /* Жестко фиксируем, чтобы отступы Tailwind не "ехали" */
+    font-size: 16px;
     color-scheme: light;
 }
 
@@ -32,9 +30,8 @@ html.dark {
 }
 
 /* =========================================
-   2. МАСШТАБИРОВАНИЕ ТЕКСТА (БЕЗ ПОЛОМКИ ВЕРСТКИ)
+   2. МАСШТАБИРОВАНИЕ ТЕКСТА
 ========================================= */
-/* Переопределяем текстовые классы Tailwind, чтобы они реагировали на наш ползунок */
 body { font-size: calc(1rem * var(--font-scale)); }
 body .text-xs { font-size: calc(0.75rem * var(--font-scale)); line-height: 1.2; }
 body .text-sm { font-size: calc(0.875rem * var(--font-scale)); line-height: 1.25; }
@@ -95,7 +92,7 @@ input[type="text"], input[type="number"] {
 }
 
 /* =========================================
-   5. ТАЙМЕРЫ (КРУГИ И ШРИФТЫ - НОВЫЙ ПОДХОД)
+   5. ТАЙМЕРЫ (КРУГИ И ШРИФТЫ)
 ========================================= */
 .relative.w-72.h-72 {
     --circle-size: min(70vw, 280px);
@@ -103,7 +100,6 @@ input[type="text"], input[type="number"] {
     height: var(--circle-size);
 }
 
-/* Базовый стиль для цифр (00:00.00) */
 .timer-display {
     font-size: clamp(2rem, 11vw, 2.8rem);
     line-height: 1;
@@ -113,11 +109,10 @@ input[type="text"], input[type="number"] {
     font-style: normal;
 }
 
-/* Стиль для состояния "GO" (Огромный курсив) */
 .timer-display.is-go {
     font-size: clamp(3rem, 18vw, 4.8rem);
     font-style: italic;
-    padding-right: 0.1em; /* Чтобы курсив не обрезался */
+    padding-right: 0.1em;
 }
 
 /* =========================================
@@ -142,7 +137,6 @@ input[type="text"], input[type="number"] {
     body #view-settings { flex-direction: column; }
 }
 
-/* АДАПТИВ ДЛЯ ВЕРТИКАЛЬНЫХ МАЛЕНЬКИХ ЭКРАНОВ */
 @media (max-height: 700px) and (orientation: portrait) {
     body .relative.w-72.h-72 { --circle-size: min(45vh, 220px); }
     body h2 { margin-bottom: 0.5rem; margin-top: 0; }
@@ -153,13 +147,12 @@ input[type="text"], input[type="number"] {
     body .h-\[45\%\] { height: 52%; }
     body #tm-h, body #tm-m, body #tm-s { width: 3rem; height: 3rem; font-size: 2rem; }
     
-    /* Уменьшаем шрифты таймера */
     body .timer-display { font-size: clamp(1.6rem, 9vw, 2.2rem); }
     body .timer-display.is-go { font-size: clamp(2.5rem, 15vw, 3.8rem); }
 }
 
 /* =========================================
-   7. УТИЛИТЫ И ЦВЕТА (ПОВЫШЕННАЯ СПЕЦИФИЧНОСТЬ)
+   7. УТИЛИТЫ И ЦВЕТА
 ========================================= */
 body .app-bg { background-color: var(--bg-color); transition: background-color 0.3s; }
 body .app-surface { background-color: var(--surface-color); transition: background-color 0.3s; }
@@ -195,7 +188,6 @@ input[type=range]::-moz-range-track { width: 100%; height: 4px; cursor: pointer;
 input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 
-/* КАСТОМНЫЙ ПЕРЕКЛЮЧАТЕЛЬ МИЛЛИСЕКУНД */
 .custom-toggle {
     width: 44px; height: 24px; background-color: #e5e7eb; border-radius: 9999px; position: relative; transition: background-color 0.3s ease;
 }

@@ -1,4 +1,5 @@
 export const $ = (id) => document.getElementById(id);
+
 export const escapeHTML = (str) => str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 
 let toastTimeout = null;

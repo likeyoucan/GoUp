@@ -11,14 +11,12 @@ window.themeManager = themeManager;
 window.tb = tb;
 window.adjustVal = adjustVal;
 
-// Логика сброса настроек
 window.resetSettings = () => {
     const msg = langManager.current === 'ru' 
         ? "Сбросить настройки? (Ваши тренировки сохранятся)" 
         : "Reset settings? (Your workouts will be saved)";
         
     if (confirm(msg)) {
-        // Удаляем только настройки интерфейса
         localStorage.removeItem('theme_mode');
         localStorage.removeItem('theme_color');
         localStorage.removeItem('theme_bg_color');
@@ -26,7 +24,6 @@ window.resetSettings = () => {
         localStorage.removeItem('app_lang');
         localStorage.removeItem('app_show_ms');
         
-        // Перезагружаем страницу, чтобы применить дефолтные значения
         location.reload();
     }
 };

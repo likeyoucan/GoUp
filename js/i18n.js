@@ -1,4 +1,4 @@
-import { $ } from './utils.js';
+import { t as translationFunc } from './i18n.js'; // Dummy import block to avoid conflict in bundler context
 
 export const translations = {
     en: {
@@ -11,7 +11,11 @@ export const translations = {
         accent_color: "Accent", bg_color: "Background", interface: "General", font_size: "Font Size",
         timer_finished: "Timer Finished!", tabata_complete: "Tabata Complete!", get_ready: "Get Ready",
         cannot_delete: "Cannot delete active/last workout", lap_text: "Lap", active_timer: "Stop timer first!",
-        show_ms: "Show Milliseconds", reset_settings: "Reset to Defaults"
+        show_ms: "Show Milliseconds", reset_settings: "Reset to Defaults",
+        save_session: "Save Session", saved_results: "Saved Results", sort_by: "Sort by:",
+        date_new: "Newest first", date_old: "Oldest first", name_az: "Name (A-Z)", result_fast: "Result (Fastest)",
+        empty_sessions: "No saved sessions", session_saved: "Session saved!", enter_name: "Enter session name:",
+        rename: "Rename", delete: "Delete", cancel: "Cancel", session_name: "Session Name"
     },
     ru: {
         stopwatch: "Секундомер", timer: "Таймер", tabata: "Табата", settings: "Настройки",
@@ -23,7 +27,11 @@ export const translations = {
         accent_color: "Цвет акцента", bg_color: "Цвет фона", interface: "Общие", font_size: "Размер шрифта",
         timer_finished: "Таймер завершен!", tabata_complete: "Тренировка завершена!", get_ready: "Приготовьтесь",
         cannot_delete: "Нельзя удалить активную/последнюю", lap_text: "Круг", active_timer: "Сначала остановите таймер!",
-        show_ms: "Миллисекунды", reset_settings: "Сброс настроек"
+        show_ms: "Миллисекунды", reset_settings: "Сброс настроек",
+        save_session: "Сохранить", saved_results: "Сохраненные результаты", sort_by: "Сортировка:",
+        date_new: "Сначала новые", date_old: "Сначала старые", name_az: "По имени (А-Я)", result_fast: "По результату",
+        empty_sessions: "Нет сохраненных результатов", session_saved: "Сохранено!", enter_name: "Введите название:",
+        rename: "Изменить", delete: "Удалить", cancel: "Отмена", session_name: "Имя сессии"
     }
 };
 
@@ -35,21 +43,30 @@ export const langManager = {
         else {
             const sys = navigator.language.startsWith('ru') ? 'ru' : 'en';
             this.setLang(sys, true);
-            $('langSelect').value = 'auto';
+            const ls = document.getElementById('langSelect');
+            if(ls) ls.value = 'auto';
         }
-        $('langSelect').addEventListener('change', (e) => {
-            if (e.target.value === 'auto') {
-                const sys = navigator.language.startsWith('ru') ? 'ru' : 'en';
-                this.setLang(sys, true);
-                localStorage.setItem('app_lang', 'auto');
-            } else { this.setLang(e.target.value); }
-        });
+        const ls = document.getElementById('langSelect');
+        if(ls) {
+            ls.addEventListener('change', (e) => {
+                if (e.target.value === 'auto') {
+                    const sys = navigator.language.startsWith('ru') ? 'ru' : 'en';
+                    this.setLang(sys, true);
+                    localStorage.setItem('app_lang', 'auto');
+                } else { this.setLang(e.target.value); }
+            });
+        }
     },
     setLang(lang, isAuto = false) {
         this.current = lang;
         if (!isAuto) localStorage.setItem('app_lang', lang);
-        $('langSelect').value = isAuto ? 'auto' : lang;
+        const ls = document.getElementById('langSelect');
+        if(ls) ls.value = isAuto ? 'auto' : lang;
         document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
+        
+        if(window.sw && typeof window.sw.renderSavedSessions === 'function') {
+            window.sw.renderSavedSessions();
+        }
     }
 };
 export const t = (key) => translations[langManager.current][key] || key;

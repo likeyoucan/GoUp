@@ -33,7 +33,7 @@ export const navigation = {
             const now = new Date(), h = String(now.getHours()).padStart(2, '0'), m = String(now.getMinutes()).padStart(2, '0');
             $('clock').textContent = now.getSeconds() % 2 === 0 ? `${h}:${m}` : `${h} ${m}`;
         };
-        update(); // Сразу обновляем часы
+        update(); 
         setInterval(update, 1000);
     }
 };

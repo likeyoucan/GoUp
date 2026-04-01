@@ -7,7 +7,6 @@ export const themeManager = {
         this.setColor(localStorage.getItem('theme_color') || '#22c55e');
         this.setBgColor(localStorage.getItem('theme_bg_color') || 'default');
         
-        // Значение слайдера 16 (дефолт) = масштаб 1. 24 = масштаб 1.5. 12 = масштаб 0.75
         this.setFontSize(localStorage.getItem('font_size') || 16); 
 
         this.showMs = localStorage.getItem('app_show_ms') !== 'false';
@@ -26,7 +25,7 @@ export const themeManager = {
             if (this.currentMode === 'system') this.setMode('system');
         });
     },
-    setMode(mode) { /* Без изменений */
+    setMode(mode) {
         this.currentMode = mode; localStorage.setItem('theme_mode', mode);
         document.querySelectorAll('[id^="theme-"]').forEach(b => { b.classList.remove('app-surface', 'shadow-sm', 'app-text'); b.classList.add('app-text-sec'); });
         const activeBtn = $(`theme-${mode}`);
@@ -35,17 +34,17 @@ export const themeManager = {
         if (isDark) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
         this.applyBgTheme(this.currentBg, isDark);
     },
-    setColor(hex) { /* Без изменений */
+    setColor(hex) {
         localStorage.setItem('theme_color', hex); document.documentElement.style.setProperty('--primary-color', hex);
         this.updateButtons('.color-btn', hex, 'customColorBtn');
     },
-    setBgColor(hex) { /* Без изменений */
+    setBgColor(hex) {
         this.currentBg = hex; localStorage.setItem('theme_bg_color', hex);
         const isDark = document.documentElement.classList.contains('dark');
         this.applyBgTheme(hex, isDark);
         this.updateButtons('.bg-btn', hex, 'customBgBtn', true);
     },
-    updateButtons(selector, hex, customId, isBg = false) { /* Без изменений */
+    updateButtons(selector, hex, customId, isBg = false) {
         let found = false;
         document.querySelectorAll(selector).forEach(b => {
             b.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-white', 'dark:ring-offset-gray-900', 'border-gray-500', 'border-transparent');
@@ -64,14 +63,14 @@ export const themeManager = {
             picker.classList.replace('border-transparent', 'border-white');
         } else { picker.classList.replace('border-white', 'border-transparent'); }
     },
-    applyBgTheme(hex, isDark) { /* Без изменений */
+    applyBgTheme(hex, isDark) {
         const root = document.documentElement;
         if (hex === 'default') { root.style.removeProperty('--bg-color'); root.style.removeProperty('--surface-color'); return; }
         const { h, s, l } = this.hexToHSL(hex);
         if (isDark) { root.style.setProperty('--bg-color', `hsl(${h}, ${Math.min(s, 40)}%, 8%)`); root.style.setProperty('--surface-color', `hsl(${h}, ${Math.min(s, 40)}%, 14%)`);
         } else { root.style.setProperty('--bg-color', `hsl(${h}, ${Math.max(s, 20)}%, 94%)`); root.style.setProperty('--surface-color', `hsl(${h}, ${Math.max(s, 20)}%, 98%)`); }
     },
-    hexToHSL(H) { /* Без изменений */
+    hexToHSL(H) {
         let r = 0, g = 0, b = 0;
         if (H.length == 4) { r = "0x" + H[1] + H[1]; g = "0x" + H[2] + H[2]; b = "0x" + H[3] + H[3]; }
         else if (H.length == 7) { r = "0x" + H[1] + H[2]; g = "0x" + H[3] + H[4]; b = "0x" + H[5] + H[6]; }
@@ -86,7 +85,6 @@ export const themeManager = {
         return { h, s: +(s * 100).toFixed(1), l: +(l * 100).toFixed(1) };
     },
     setFontSize(size) {
-        // Устанавливаем масштаб (scale), а не размер в px
         const scale = size / 16;
         document.documentElement.style.setProperty('--font-scale', scale);
         $('fontSizeDisplay').textContent = size + ' px'; 
