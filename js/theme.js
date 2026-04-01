@@ -15,14 +15,8 @@ export const themeManager = {
             toggle.addEventListener('change', (e) => {
                 this.showMs = e.target.checked;
                 localStorage.setItem('app_show_ms', this.showMs);
-                
-                // ИСПРАВЛЕНИЕ ЗДЕСЬ: Обновляем экран только если время больше 0
-                // Иначе слово "GO" заменится на "00:00"
-                if (window.sw && !window.sw.isRunning && window.sw.elapsedTime > 0) {
-                    if (typeof window.sw.updateDisplay === 'function') {
-                        window.sw.updateDisplay();
-                    }
-                }
+                // Отправляем событие о смене настроек миллисекунд
+                document.dispatchEvent(new CustomEvent('msChanged', { detail: this.showMs }));
             });
         }
 

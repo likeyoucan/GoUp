@@ -1,7 +1,7 @@
 import { $ } from './utils.js';
 
 export const navigation = {
-    activeView: 'stopwatch', // Сохраняем текущий вид для горячих клавиш
+    activeView: 'stopwatch',
     
     init() { this.initClock(); },
     

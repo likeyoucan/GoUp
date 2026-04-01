@@ -4,7 +4,7 @@ export const escapeHTML = (str) => str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;
 
 // Оптимизация DOM: Обновляем textContent только если текст реально изменился
 export const updateText = (el, text) => {
-    if (el && el.textContent !== text) el.textContent = text;
+    if (el && el.textContent !== String(text)) el.textContent = text;
 };
 
 // Динамический заголовок вкладки
@@ -41,10 +41,10 @@ let toastTimeout = null;
 export const showToast = (message) => {
     const toast = $('toast');
     $('toast-msg').textContent = message;
-    toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+    toast.classList.remove('opacity-0', '-translate-y-4');
     if (toastTimeout) clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-y-[-20px]');
+        toast.classList.add('opacity-0', '-translate-y-4');
     }, 3000);
 };
 

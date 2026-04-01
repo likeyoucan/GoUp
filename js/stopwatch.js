@@ -30,7 +30,6 @@ export const sw = {
         this.els.nameConfirm?.addEventListener('click', () => this.confirmNameModal());
         this.els.nameInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.confirmNameModal(); });
 
-        // Делегирование событий для списка сессий (Экономия памяти)
         this.els.sessionsList?.addEventListener('click', (e) => {
             const header = e.target.closest('.sw-session-header');
             const renameBtn = e.target.closest('.sw-rename-btn');
@@ -41,8 +40,20 @@ export const sw = {
             else if (header) this.toggleSessionDetails(Number(header.dataset.id));
         });
 
-        const stored = localStorage.getItem('sw_saved_sessions');
-        if (stored) this.savedSessions = JSON.parse(stored);
+        // Безопасный парсинг
+        try {
+            const stored = localStorage.getItem('sw_saved_sessions');
+            if (stored) this.savedSessions = JSON.parse(stored);
+        } catch (e) {
+            console.error('Failed to parse sessions');
+            this.savedSessions = [];
+        }
+
+        // Подписываемся на кастомные события
+        document.addEventListener('languageChanged', () => this.renderSavedSessions());
+        document.addEventListener('msChanged', () => {
+            if (!this.isRunning && this.elapsedTime > 0) this.updateDisplay();
+        });
     },
 
     formatTime(ms, forceMs = null) {
@@ -56,7 +67,7 @@ export const sw = {
             this.isRunning = false; 
             cancelAnimationFrame(this.rAF);
             releaseWakeLock();
-            updateTitle(''); // Сброс заголовка вкладки
+            updateTitle('');
             this.els.status.classList.remove('hidden'); 
             updateText(this.els.lapBtn, t('reset'));
             this.els.lapBtn.classList.replace('app-surface', 'bg-red-500'); 
@@ -91,7 +102,7 @@ export const sw = {
     updateDisplay() {
         const timeStr = this.formatTime(this.elapsedTime);
         updateText(this.els.display, timeStr);
-        updateTitle(this.formatTime(this.elapsedTime, false)); // Вкладка без миллисекунд
+        updateTitle(this.formatTime(this.elapsedTime, false));
         this.els.ring.style.strokeDashoffset = 282.74 - ((this.elapsedTime % 60000) / 60000 * 282.74);
     },
     
@@ -153,6 +164,7 @@ export const sw = {
         this.openNameModal('rename', session.name, id);
     },
 
+    // --- Анимации Модалок Секундомера ---
     openNameModal(action, defaultName, targetId = null) {
         this.nameModalState.action = action;
         this.nameModalState.targetId = targetId;
@@ -161,28 +173,51 @@ export const sw = {
         this.els.nameInput.value = defaultName;
         
         this.els.nameModal.classList.remove('hidden');
+        this.els.nameModal.classList.add('flex');
         this.els.nameModal.removeAttribute('inert');
         this.els.nameModal.removeAttribute('aria-hidden');
-        void this.els.nameModal.offsetWidth;
 
-        this.els.nameModal.classList.replace('opacity-0', 'opacity-100');
-        this.els.nameModalContent.classList.remove('opacity-0', 'translate-y-[70px]');
-        this.els.nameModalContent.classList.add('opacity-100', 'translate-y-0');
+        requestAnimationFrame(() => {
+            this.els.nameModal.classList.remove('opacity-0');
+            this.els.nameModalContent.classList.remove('opacity-0', 'translate-y-16');
+        });
 
         setTimeout(() => this.els.nameInput.focus(), 100);
     },
 
     closeNameModal() {
-        this.els.nameModal.classList.replace('opacity-100', 'opacity-0');
-        this.els.nameModalContent.classList.remove('opacity-100', 'translate-y-0');
-        this.els.nameModalContent.classList.add('opacity-0', 'translate-y-[70px]');
+        this.els.nameModal.classList.add('opacity-0');
+        this.els.nameModalContent.classList.add('opacity-0', 'translate-y-16');
         
         setTimeout(() => {
             this.els.nameModal.classList.add('hidden');
+            this.els.nameModal.classList.remove('flex');
             this.els.nameModal.setAttribute('inert', '');
             this.els.nameModal.setAttribute('aria-hidden', 'true');
             this.nameModalState = { action: null, targetId: null, pendingSession: null };
-        }, 500);
+        }, 300);
+    },
+
+    openModal() {
+        this.sortSessions(this.currentSort);
+        this.els.modal.classList.remove('hidden'); 
+        this.els.modal.classList.add('flex');
+        this.els.modal.removeAttribute('inert'); 
+        this.els.modal.removeAttribute('aria-hidden');
+        
+        requestAnimationFrame(() => {
+            this.els.modal.classList.remove('opacity-0', 'translate-y-16');
+        });
+    },
+
+    closeModal() {
+        this.els.modal.classList.add('opacity-0', 'translate-y-16');
+        setTimeout(() => {
+            this.els.modal.classList.add('hidden'); 
+            this.els.modal.classList.remove('flex');
+            this.els.modal.setAttribute('inert', ''); 
+            this.els.modal.setAttribute('aria-hidden', 'true');
+        }, 300);
     },
 
     confirmNameModal() {
@@ -205,28 +240,6 @@ export const sw = {
             }
         }
         this.closeNameModal();
-    },
-
-    openModal() {
-        this.sortSessions(this.currentSort);
-        this.els.modal.classList.remove('hidden'); 
-        this.els.modal.removeAttribute('inert'); 
-        this.els.modal.removeAttribute('aria-hidden');
-        void this.els.modal.offsetWidth;
-        
-        this.els.modal.classList.remove('opacity-0', 'translate-y-[70px]');
-        this.els.modal.classList.add('opacity-100', 'translate-y-0');
-    },
-
-    closeModal() {
-        this.els.modal.classList.remove('opacity-100', 'translate-y-0');
-        this.els.modal.classList.add('opacity-0', 'translate-y-[70px]');
-        
-        setTimeout(() => {
-            this.els.modal.classList.add('hidden'); 
-            this.els.modal.setAttribute('inert', ''); 
-            this.els.modal.setAttribute('aria-hidden', 'true');
-        }, 500);
     },
 
     sortSessions(type) {
@@ -288,7 +301,6 @@ export const sw = {
             const div = document.createElement('div');
             div.className = "app-surface border app-border rounded-xl overflow-hidden transition-all";
             
-            // Используем data-id для делегирования событий
             div.innerHTML = `
                 <div class="p-4 cursor-pointer flex justify-between items-center active:bg-gray-500/10 sw-session-header" data-id="${session.id}">
                     <div class="flex-1 min-w-0 pr-4">

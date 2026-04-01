@@ -15,12 +15,15 @@ export const tm = {
         
         [this.els.m, this.els.s].forEach(i => {
             if(!i) return;
+            // Улучшенный UX: убираем ноль при фокусе
+            i.addEventListener('focus', () => { if (i.value === '00' || i.value === '0') i.value = ''; });
             i.addEventListener('input', () => { 
                 i.value = i.value.replace(/\D/g, '').slice(0, 2); 
                 if (parseInt(i.value, 10) > 59) i.value = '59'; 
             });
         });
         if(this.els.h) {
+            this.els.h.addEventListener('focus', () => { if (this.els.h.value === '00' || this.els.h.value === '0') this.els.h.value = ''; });
             this.els.h.addEventListener('input', () => { 
                 this.els.h.value = this.els.h.value.replace(/\D/g, '').slice(0, 2); 
             });
@@ -91,7 +94,7 @@ export const tm = {
         
         if (remaining <= 0) {
             this.isRunning = false;
-            vibrate([200, 100, 200, 100, 400]); // Длинная вибрация при завершении
+            vibrate([200, 100, 200, 100, 400]);
             requestAnimationFrame(() => { showToast(t('timer_finished')); this.reset(); }); 
             return;
         }

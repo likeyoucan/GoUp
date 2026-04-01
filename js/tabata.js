@@ -13,9 +13,17 @@ export const tb = {
             editName: $('tb-edit-name'), editWork: $('tb-edit-work'), editRest: $('tb-edit-rest'), editRounds: $('tb-edit-rounds'),
         };
 
-        const stored = localStorage.getItem('tb_workouts');
-        if (stored) this.workouts = JSON.parse(stored);
-        else { this.workouts = [{ id: 1, name: "Standard Tabata", work: 20, rest: 10, rounds: 8 }]; localStorage.setItem('tb_workouts', JSON.stringify(this.workouts)); }
+        // Безопасный парсинг
+        try {
+            const stored = localStorage.getItem('tb_workouts');
+            if (stored) {
+                this.workouts = JSON.parse(stored);
+                if (!Array.isArray(this.workouts) || this.workouts.length === 0) throw new Error("Invalid data");
+            } else throw new Error("No data");
+        } catch (e) {
+            this.workouts = [{ id: 1, name: "Standard Tabata", work: 20, rest: 10, rounds: 8 }];
+            localStorage.setItem('tb_workouts', JSON.stringify(this.workouts));
+        }
         
         this.selectWorkout(this.workouts[0].id); this.renderList();
         
@@ -33,7 +41,6 @@ export const tb = {
             });
         });
 
-        // Делегирование событий для списка тренировок
         this.els.list?.addEventListener('click', (e) => {
             const delBtn = e.target.closest('.tb-del-btn');
             const row = e.target.closest('.tb-workout-row');
@@ -46,32 +53,35 @@ export const tb = {
             }
         });
         
-        // Поддержка клавиатуры для списка
         this.els.list?.addEventListener('keydown', (e) => {
             const row = e.target.closest('.tb-workout-row');
             if (e.key === 'Enter' && row) this.selectWorkout(Number(row.dataset.id));
         });
     },
     
+    // --- Анимации Модалок Табаты ---
     openModal() {
         this.els.modal.classList.remove('hidden'); 
+        this.els.modal.classList.add('flex');
         this.els.modal.removeAttribute('inert'); 
         this.els.modal.removeAttribute('aria-hidden');
-        void this.els.modal.offsetWidth;
         
-        this.els.modal.classList.remove('opacity-0', 'translate-y-[70px]');
-        this.els.modal.classList.add('opacity-100', 'translate-y-0');
+        requestAnimationFrame(() => {
+            this.els.modal.classList.remove('opacity-0', 'translate-y-16');
+        });
 
         this.els.editName.value = ""; this.els.editWork.value = 20; this.els.editRest.value = 10; this.els.editRounds.value = 8;
         setTimeout(() => this.els.editName.focus(), 100);
     },
     
     closeModal() {
-        this.els.modal.classList.remove('opacity-100', 'translate-y-0');
-        this.els.modal.classList.add('opacity-0', 'translate-y-[70px]');
+        this.els.modal.classList.add('opacity-0', 'translate-y-16');
         setTimeout(() => {
-            this.els.modal.classList.add('hidden'); this.els.modal.setAttribute('inert', ''); this.els.modal.setAttribute('aria-hidden', 'true'); 
-        }, 500);
+            this.els.modal.classList.add('hidden'); 
+            this.els.modal.classList.remove('flex');
+            this.els.modal.setAttribute('inert', ''); 
+            this.els.modal.setAttribute('aria-hidden', 'true'); 
+        }, 300);
     },
     
     saveWorkout() {
@@ -111,7 +121,6 @@ export const tb = {
             const div = document.createElement('div');
             const isAct = w.id === this.selectedId;
             div.tabIndex = 0; 
-            // Добавлен класс tb-workout-row и data-id
             div.className = `tb-workout-row p-4 rounded-xl flex justify-between items-center transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] ${isAct ? 'app-surface border-2 border-[var(--primary-color)]' : 'app-surface border border-transparent'}`;
             div.dataset.id = w.id;
             
@@ -177,7 +186,7 @@ export const tb = {
     },
     
     nextPhase() {
-        vibrate([100, 50, 100]); // Двойная вибрация при смене фазы
+        vibrate([100, 50, 100]); 
         if (this.status === "READY") { this.status = "WORK"; this.phaseDuration = this.work; } 
         else if (this.status === "WORK") { this.status = "REST"; this.phaseDuration = this.rest; } 
         else if (this.status === "REST") {

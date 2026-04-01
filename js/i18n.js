@@ -65,10 +65,11 @@ export const langManager = {
         
         document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
         
-        if (window.sw && typeof window.sw.renderSavedSessions === 'function') {
-            window.sw.renderSavedSessions();
-        }
+        document.dispatchEvent(new CustomEvent('languageChanged'));
     }
 };
 
-export const t = (key) => translations[langManager.current][key] || key;
+// Экспортируем 't' как классическую функцию в самом конце
+export function t(key) {
+    return translations[langManager.current][key] || key;
+}
