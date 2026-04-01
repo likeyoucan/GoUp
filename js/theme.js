@@ -15,8 +15,13 @@ export const themeManager = {
             toggle.addEventListener('change', (e) => {
                 this.showMs = e.target.checked;
                 localStorage.setItem('app_show_ms', this.showMs);
-                if (window.sw && !window.sw.isRunning && window.sw.updateDisplay) {
-                    window.sw.updateDisplay();
+                
+                // ИСПРАВЛЕНИЕ ЗДЕСЬ: Обновляем экран только если время больше 0
+                // Иначе слово "GO" заменится на "00:00"
+                if (window.sw && !window.sw.isRunning && window.sw.elapsedTime > 0) {
+                    if (typeof window.sw.updateDisplay === 'function') {
+                        window.sw.updateDisplay();
+                    }
                 }
             });
         }

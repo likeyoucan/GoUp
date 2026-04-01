@@ -1,8 +1,12 @@
 import { $ } from './utils.js';
 
 export const navigation = {
+    activeView: 'stopwatch', // Сохраняем текущий вид для горячих клавиш
+    
     init() { this.initClock(); },
+    
     switchView(viewId) {
+        this.activeView = viewId;
         ['stopwatch', 'timer', 'tabata', 'settings'].forEach(id => {
             const el = $(`view-${id}`);
             if (!el) return;

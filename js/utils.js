@@ -2,15 +2,47 @@ export const $ = (id) => document.getElementById(id);
 
 export const escapeHTML = (str) => str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
 
-let toastTimeout = null;
+// Оптимизация DOM: Обновляем textContent только если текст реально изменился
+export const updateText = (el, text) => {
+    if (el && el.textContent !== text) el.textContent = text;
+};
 
+// Динамический заголовок вкладки
+export const updateTitle = (text) => {
+    document.title = text ? `${text} - Stopwatch Pro` : 'Stopwatch Pro';
+};
+
+// Виброотклик (работает только на мобильных)
+export const vibrate = (ms = 50) => {
+    if (navigator.vibrate) navigator.vibrate(ms);
+};
+
+// Wake Lock API (Удержание экрана включенным)
+let wakeLock = null;
+export const requestWakeLock = async () => {
+    if ('wakeLock' in navigator && !wakeLock) {
+        try { wakeLock = await navigator.wakeLock.request('screen'); } 
+        catch (err) { console.warn('Wake Lock error:', err); }
+    }
+};
+export const releaseWakeLock = () => {
+    if (wakeLock !== null) {
+        wakeLock.release().then(() => { wakeLock = null; });
+    }
+};
+// Восстановление Wake Lock при возврате на вкладку
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        wakeLock = await navigator.wakeLock.request('screen');
+    }
+});
+
+let toastTimeout = null;
 export const showToast = (message) => {
     const toast = $('toast');
     $('toast-msg').textContent = message;
     toast.classList.remove('opacity-0', 'translate-y-[-20px]');
-    
     if (toastTimeout) clearTimeout(toastTimeout);
-    
     toastTimeout = setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-[-20px]');
     }, 3000);

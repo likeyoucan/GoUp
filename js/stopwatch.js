@@ -1,4 +1,4 @@
-import { $, escapeHTML, showToast, formatMsTime } from './utils.js';
+import { $, escapeHTML, showToast, formatMsTime, updateText, updateTitle, vibrate, requestWakeLock, releaseWakeLock } from './utils.js';
 import { t } from './i18n.js';
 import { themeManager } from './theme.js';
 
@@ -30,6 +30,17 @@ export const sw = {
         this.els.nameConfirm?.addEventListener('click', () => this.confirmNameModal());
         this.els.nameInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.confirmNameModal(); });
 
+        // Делегирование событий для списка сессий (Экономия памяти)
+        this.els.sessionsList?.addEventListener('click', (e) => {
+            const header = e.target.closest('.sw-session-header');
+            const renameBtn = e.target.closest('.sw-rename-btn');
+            const deleteBtn = e.target.closest('.sw-delete-btn');
+            
+            if (renameBtn) this.prepareRenameSession(Number(renameBtn.dataset.id), e);
+            else if (deleteBtn) this.deleteSession(Number(deleteBtn.dataset.id), e);
+            else if (header) this.toggleSessionDetails(Number(header.dataset.id));
+        });
+
         const stored = localStorage.getItem('sw_saved_sessions');
         if (stored) this.savedSessions = JSON.parse(stored);
     },
@@ -40,21 +51,25 @@ export const sw = {
     },
     
     toggle() {
+        vibrate(50);
         if (this.isRunning) {
             this.isRunning = false; 
             cancelAnimationFrame(this.rAF);
+            releaseWakeLock();
+            updateTitle(''); // Сброс заголовка вкладки
             this.els.status.classList.remove('hidden'); 
-            this.els.lapBtn.textContent = t('reset'); 
+            updateText(this.els.lapBtn, t('reset'));
             this.els.lapBtn.classList.replace('app-surface', 'bg-red-500'); 
             this.els.lapBtn.classList.replace('app-text', 'text-white');
         } else {
             this.startTime = performance.now() - this.elapsedTime;
             this.isRunning = true; 
+            requestWakeLock();
             this.tick();
             this.els.status.classList.add('hidden'); 
             this.els.display.classList.remove('is-go');
             this.els.lapBtn.classList.remove('hidden'); 
-            this.els.lapBtn.textContent = t('lap');
+            updateText(this.els.lapBtn, t('lap'));
             this.els.lapBtn.classList.replace('bg-red-500', 'app-surface'); 
             this.els.lapBtn.classList.replace('text-white', 'app-text');
         }
@@ -74,11 +89,14 @@ export const sw = {
     },
     
     updateDisplay() {
-        this.els.display.textContent = this.formatTime(this.elapsedTime);
+        const timeStr = this.formatTime(this.elapsedTime);
+        updateText(this.els.display, timeStr);
+        updateTitle(this.formatTime(this.elapsedTime, false)); // Вкладка без миллисекунд
         this.els.ring.style.strokeDashoffset = 282.74 - ((this.elapsedTime % 60000) / 60000 * 282.74);
     },
     
     recordLapOrReset() {
+        vibrate(30);
         if (this.isRunning) {
             const diff = this.elapsedTime - (this.laps.length > 0 ? this.laps[0].total : 0);
             this.laps.unshift({ total: this.elapsedTime, diff: diff, index: this.laps.length + 1 });
@@ -94,11 +112,10 @@ export const sw = {
                 void this.els.lapFlash.offsetWidth; 
                 this.els.lapFlash.classList.add('flash-active');
             }
-
             this.updateSaveButtonVisibility();
         } else if (this.elapsedTime > 0) {
             this.elapsedTime = 0; this.laps = [];
-            this.els.display.textContent = 'GO'; 
+            updateText(this.els.display, 'GO'); 
             this.els.display.classList.add('is-go');
             this.els.status.classList.add('hidden'); 
             this.els.ring.style.strokeDashoffset = 282.74;
@@ -130,7 +147,7 @@ export const sw = {
     },
 
     prepareRenameSession(id, e) {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         const session = this.savedSessions.find(s => s.id === id);
         if (!session) return;
         this.openNameModal('rename', session.name, id);
@@ -140,7 +157,7 @@ export const sw = {
         this.nameModalState.action = action;
         this.nameModalState.targetId = targetId;
         
-        if (this.els.nameTitle) this.els.nameTitle.textContent = action === 'rename' ? t('rename') : t('save_session');
+        if (this.els.nameTitle) updateText(this.els.nameTitle, action === 'rename' ? t('rename') : t('save_session'));
         this.els.nameInput.value = defaultName;
         
         this.els.nameModal.classList.remove('hidden');
@@ -226,7 +243,7 @@ export const sw = {
     },
 
     deleteSession(id, e) {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         this.savedSessions = this.savedSessions.filter(s => s.id !== id);
         localStorage.setItem('sw_saved_sessions', JSON.stringify(this.savedSessions));
         this.renderSavedSessions();
@@ -235,10 +252,10 @@ export const sw = {
     toggleSessionDetails(id) {
         const detailsEl = $(`sw-details-${id}`);
         const iconEl = $(`sw-icon-${id}`);
-        if (detailsEl.classList.contains('hidden')) {
+        if (detailsEl && detailsEl.classList.contains('hidden')) {
             detailsEl.classList.remove('hidden');
             iconEl.style.transform = 'rotate(180deg)';
-        } else {
+        } else if (detailsEl) {
             detailsEl.classList.add('hidden');
             iconEl.style.transform = 'rotate(0deg)';
         }
@@ -248,11 +265,12 @@ export const sw = {
         if (!this.els || !this.els.sessionsList) return;
 
         this.els.sessionsList.innerHTML = '';
-        
         if (this.savedSessions.length === 0) {
             this.els.sessionsList.innerHTML = `<div class="text-center app-text-sec opacity-50 mt-10 text-sm">${t('empty_sessions')}</div>`;
             return;
         }
+
+        const fragment = document.createDocumentFragment();
 
         this.savedSessions.forEach(session => {
             const dateObj = new Date(session.date);
@@ -270,8 +288,9 @@ export const sw = {
             const div = document.createElement('div');
             div.className = "app-surface border app-border rounded-xl overflow-hidden transition-all";
             
+            // Используем data-id для делегирования событий
             div.innerHTML = `
-                <div class="p-4 cursor-pointer flex justify-between items-center active:bg-gray-500/10 sw-session-header">
+                <div class="p-4 cursor-pointer flex justify-between items-center active:bg-gray-500/10 sw-session-header" data-id="${session.id}">
                     <div class="flex-1 min-w-0 pr-4">
                         <div class="font-bold app-text text-lg truncate">${escapeHTML(session.name)}</div>
                         <div class="text-xs app-text-sec mt-1">${dateStr}</div>
@@ -281,23 +300,18 @@ export const sw = {
                         <svg id="sw-icon-${session.id}" class="w-5 h-5 text-gray-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
-                
                 <div id="sw-details-${session.id}" class="hidden bg-black/5 dark:bg-black/20 border-t app-border p-4">
                     <div class="flex justify-end gap-2 mb-3">
-                        <button class="sw-rename-btn px-3 py-1 bg-blue-500/10 text-blue-500 rounded-lg text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform">${t('rename')}</button>
-                        <button class="sw-delete-btn px-3 py-1 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform">${t('delete')}</button>
+                        <button data-id="${session.id}" class="sw-rename-btn px-3 py-1 bg-blue-500/10 text-blue-500 rounded-lg text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform">${t('rename')}</button>
+                        <button data-id="${session.id}" class="sw-delete-btn px-3 py-1 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform">${t('delete')}</button>
                     </div>
                     <div class="max-h-40 overflow-y-auto no-scrollbar bg-black/5 dark:bg-white/5 rounded-lg p-2 border app-border">
                         ${lapsHtml}
                     </div>
                 </div>
             `;
-            
-            div.querySelector('.sw-session-header').addEventListener('click', () => this.toggleSessionDetails(session.id));
-            div.querySelector('.sw-rename-btn').addEventListener('click', (e) => this.prepareRenameSession(session.id, e));
-            div.querySelector('.sw-delete-btn').addEventListener('click', (e) => this.deleteSession(session.id, e));
-
-            this.els.sessionsList.appendChild(div);
+            fragment.appendChild(div);
         });
+        this.els.sessionsList.appendChild(fragment);
     }
 };

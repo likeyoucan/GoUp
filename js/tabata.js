@@ -1,4 +1,4 @@
-import { $, escapeHTML, showToast, formatTimeStr, adjustVal } from './utils.js';
+import { $, escapeHTML, showToast, formatTimeStr, adjustVal, updateText, updateTitle, vibrate, requestWakeLock, releaseWakeLock } from './utils.js';
 import { t } from './i18n.js';
 
 export const tb = {
@@ -32,6 +32,25 @@ export const tb = {
                 adjustVal(id, parseInt(delta));
             });
         });
+
+        // Делегирование событий для списка тренировок
+        this.els.list?.addEventListener('click', (e) => {
+            const delBtn = e.target.closest('.tb-del-btn');
+            const row = e.target.closest('.tb-workout-row');
+            
+            if (delBtn) {
+                e.stopPropagation();
+                this.deleteWorkout(Number(delBtn.dataset.id));
+            } else if (row) {
+                this.selectWorkout(Number(row.dataset.id));
+            }
+        });
+        
+        // Поддержка клавиатуры для списка
+        this.els.list?.addEventListener('keydown', (e) => {
+            const row = e.target.closest('.tb-workout-row');
+            if (e.key === 'Enter' && row) this.selectWorkout(Number(row.dataset.id));
+        });
     },
     
     openModal() {
@@ -43,21 +62,15 @@ export const tb = {
         this.els.modal.classList.remove('opacity-0', 'translate-y-[70px]');
         this.els.modal.classList.add('opacity-100', 'translate-y-0');
 
-        this.els.editName.value = ""; 
-        this.els.editWork.value = 20; 
-        this.els.editRest.value = 10; 
-        this.els.editRounds.value = 8;
+        this.els.editName.value = ""; this.els.editWork.value = 20; this.els.editRest.value = 10; this.els.editRounds.value = 8;
         setTimeout(() => this.els.editName.focus(), 100);
     },
     
     closeModal() {
         this.els.modal.classList.remove('opacity-100', 'translate-y-0');
         this.els.modal.classList.add('opacity-0', 'translate-y-[70px]');
-        
         setTimeout(() => {
-            this.els.modal.classList.add('hidden'); 
-            this.els.modal.setAttribute('inert', ''); 
-            this.els.modal.setAttribute('aria-hidden', 'true'); 
+            this.els.modal.classList.add('hidden'); this.els.modal.setAttribute('inert', ''); this.els.modal.setAttribute('aria-hidden', 'true'); 
         }, 500);
     },
     
@@ -67,8 +80,7 @@ export const tb = {
         const rnd = Math.max(1, parseInt(this.els.editRounds.value) || 8);
         const newW = { id: Date.now(), name: this.els.editName.value.trim() || "Tabata", work: w, rest: r, rounds: rnd };
         
-        this.workouts.push(newW); 
-        localStorage.setItem('tb_workouts', JSON.stringify(this.workouts));
+        this.workouts.push(newW); localStorage.setItem('tb_workouts', JSON.stringify(this.workouts));
         this.renderList(); this.selectWorkout(newW.id); this.closeModal();
     },
 
@@ -85,59 +97,74 @@ export const tb = {
         if (this.status !== 'STOPPED') return;
         const w = this.workouts.find(k => k.id === id); if (!w) return;
         this.selectedId = id; this.work = w.work * 1000; this.rest = w.rest * 1000; this.rounds = w.rounds;
-        this.els.activeName.textContent = w.name; this.els.activeDetail.textContent = `${w.work/1000}s / ${w.rest/1000}s • ${w.rounds} Rounds`;
+        updateText(this.els.activeName, w.name); 
+        updateText(this.els.activeDetail, `${w.work/1000}s / ${w.rest/1000}s • ${w.rounds} Rounds`);
         this.renderList();
     },
 
     renderList() {
+        if (!this.els.list) return;
         this.els.list.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+
         this.workouts.forEach(w => {
-            const div = document.createElement('div'), isAct = w.id === this.selectedId;
-            div.tabIndex = 0; div.className = `p-4 rounded-xl flex justify-between items-center transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] ${isAct ? 'app-surface border-2 border-[var(--primary-color)]' : 'app-surface border border-transparent'}`;
-            
-            div.addEventListener('click', () => this.selectWorkout(w.id));
-            div.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.selectWorkout(w.id); });
+            const div = document.createElement('div');
+            const isAct = w.id === this.selectedId;
+            div.tabIndex = 0; 
+            // Добавлен класс tb-workout-row и data-id
+            div.className = `tb-workout-row p-4 rounded-xl flex justify-between items-center transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] ${isAct ? 'app-surface border-2 border-[var(--primary-color)]' : 'app-surface border border-transparent'}`;
+            div.dataset.id = w.id;
             
             div.innerHTML = `<div><div class="font-bold app-text ${isAct ? 'primary-text' : ''}">${escapeHTML(w.name)}</div><div class="text-xs app-text-sec">${w.work}s/${w.rest}s • ${w.rounds} Rds</div></div>
-                <button class="tb-del-btn text-red-500 opacity-50 hover:opacity-100 p-2 focus:outline-none focus-visible:underline">✕</button>`;
+                <button data-id="${w.id}" class="tb-del-btn text-red-500 opacity-50 hover:opacity-100 p-2 focus:outline-none focus-visible:underline">✕</button>`;
             
-            div.querySelector('.tb-del-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.deleteWorkout(w.id);
-            });
-
-            this.els.list.appendChild(div);
+            fragment.appendChild(div);
         });
+        this.els.list.appendChild(fragment);
     },
     
-    toggle() { if (this.status === 'STOPPED') this.start(); else if (this.paused) this.resume(); else this.pause(); },
+    toggle() { 
+        vibrate(50);
+        if (this.status === 'STOPPED') this.start(); 
+        else if (this.paused) this.resume(); 
+        else this.pause(); 
+    },
     
     start() {
         this.currentRound = 1; this.status = "READY"; this.phaseDuration = 5000; 
         this.phaseEndTime = performance.now() + this.phaseDuration; this.paused = false;
         this.els.listSection.classList.add('hidden'); this.els.runningControls.classList.replace('hidden', 'flex');
-        this.els.totalRoundsDisplay.textContent = this.rounds; this.els.status.classList.remove('hidden'); 
+        updateText(this.els.totalRoundsDisplay, this.rounds); 
+        this.els.status.classList.remove('hidden'); 
         this.els.timer.classList.remove('is-go');
+        requestWakeLock();
         this.updatePhaseStyles(); this.tick();
     },
     
     pause() { 
         this.paused = true; cancelAnimationFrame(this.rAF); 
         this.remainingAtPause = this.phaseEndTime - performance.now(); 
-        this.els.status.textContent = t('pause'); 
+        updateText(this.els.status, t('pause')); 
+        releaseWakeLock();
+        updateTitle('');
     },
     
     resume() { 
         this.paused = false; 
         this.phaseEndTime = performance.now() + this.remainingAtPause; 
+        requestWakeLock();
         this.tick(); this.updatePhaseStyles(); 
     },
     
     stop() {
+        vibrate(30);
         cancelAnimationFrame(this.rAF); this.status = "STOPPED"; this.paused = false;
+        releaseWakeLock();
+        updateTitle('');
         this.els.listSection.classList.remove('hidden'); this.els.runningControls.classList.replace('flex', 'hidden');
         this.els.status.classList.add('hidden'); 
-        this.els.timer.textContent = "GO"; this.els.timer.classList.add('is-go');
+        updateText(this.els.timer, 'GO'); 
+        this.els.timer.classList.add('is-go');
         this.els.ring.style.strokeDashoffset = 282.74;
     },
     
@@ -150,25 +177,44 @@ export const tb = {
     },
     
     nextPhase() {
+        vibrate([100, 50, 100]); // Двойная вибрация при смене фазы
         if (this.status === "READY") { this.status = "WORK"; this.phaseDuration = this.work; } 
         else if (this.status === "WORK") { this.status = "REST"; this.phaseDuration = this.rest; } 
         else if (this.status === "REST") {
-            if (this.currentRound >= this.rounds) { requestAnimationFrame(() => { showToast(t('tabata_complete')); this.stop(); }); return; }
+            if (this.currentRound >= this.rounds) { 
+                vibrate([200, 100, 200, 100, 400]); 
+                requestAnimationFrame(() => { showToast(t('tabata_complete')); this.stop(); }); 
+                return; 
+            }
             this.currentRound++; this.status = "WORK"; this.phaseDuration = this.work;
         }
         this.phaseEndTime = performance.now() + this.phaseDuration; this.updatePhaseStyles(); this.tick();
     },
     
     updatePhaseStyles() {
-        this.els.roundDisplay.textContent = this.currentRound; this.els.ring.classList.remove('primary-stroke', 'text-blue-500', 'text-gray-500'); this.els.ring.style.stroke = "";
-        if (this.status === "WORK") { this.els.status.textContent = t('work'); this.els.status.className = "text-xl font-bold uppercase tracking-widest mb-1 primary-text"; this.els.ring.classList.add('primary-stroke'); } 
-        else if (this.status === "REST") { this.els.status.textContent = t('rest'); this.els.status.className = "text-xl font-bold uppercase tracking-widest mb-1 text-blue-500"; this.els.ring.style.stroke = "#3b82f6"; } 
-        else { this.els.status.textContent = t('get_ready'); this.els.status.className = "text-xl font-bold uppercase tracking-widest mb-1 app-text-sec"; this.els.ring.classList.add('primary-stroke'); }
+        updateText(this.els.roundDisplay, this.currentRound); 
+        this.els.ring.classList.remove('primary-stroke', 'text-blue-500', 'text-gray-500'); this.els.ring.style.stroke = "";
+        
+        if (this.status === "WORK") { 
+            updateText(this.els.status, t('work')); 
+            this.els.status.className = "text-xl font-bold uppercase tracking-widest mb-1 primary-text"; 
+            this.els.ring.classList.add('primary-stroke'); 
+        } else if (this.status === "REST") { 
+            updateText(this.els.status, t('rest')); 
+            this.els.status.className = "text-xl font-bold uppercase tracking-widest mb-1 text-blue-500"; 
+            this.els.ring.style.stroke = "#3b82f6"; 
+        } else { 
+            updateText(this.els.status, t('get_ready')); 
+            this.els.status.className = "text-xl font-bold uppercase tracking-widest mb-1 app-text-sec"; 
+            this.els.ring.classList.add('primary-stroke'); 
+        }
     },
     
     render(rem) {
         const sTotal = Math.max(0, Math.ceil(rem / 1000));
-        this.els.timer.textContent = formatTimeStr(sTotal, false);
+        const timeStr = formatTimeStr(sTotal, false);
+        updateText(this.els.timer, timeStr);
+        updateTitle(`${this.status}: ${timeStr}`);
         this.els.ring.style.strokeDashoffset = 282.74 - ((Math.max(0, this.phaseDuration - rem) / this.phaseDuration) * 282.74);
     }
 };

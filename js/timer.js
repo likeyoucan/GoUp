@@ -1,4 +1,4 @@
-import { $, showToast, pad } from './utils.js';
+import { $, showToast, pad, updateText, updateTitle, vibrate, requestWakeLock, releaseWakeLock } from './utils.js';
 import { t } from './i18n.js';
 
 export const tm = {
@@ -28,10 +28,14 @@ export const tm = {
     },
     
     toggle() {
+        vibrate(50);
         if (this.isRunning) {
             this.isRunning = false; this.isPaused = true; 
             this.remainingAtPause = Math.max(0, this.targetTime - performance.now());
-            cancelAnimationFrame(this.rAF); this.updateUIState();
+            cancelAnimationFrame(this.rAF); 
+            releaseWakeLock();
+            updateTitle('');
+            this.updateUIState();
         } else {
             if (!this.isPaused) {
                 const h = parseInt(this.els.h.value, 10) || 0;
@@ -43,15 +47,22 @@ export const tm = {
             } else { 
                 this.targetTime = performance.now() + this.remainingAtPause; 
             }
-            this.isRunning = true; this.isPaused = false; this.updateUIState(); this.tick();
+            this.isRunning = true; this.isPaused = false; 
+            requestWakeLock();
+            this.updateUIState(); this.tick();
         }
     },
     
     reset() {
-        this.isRunning = false; this.isPaused = false; cancelAnimationFrame(this.rAF);
+        vibrate(30);
+        this.isRunning = false; this.isPaused = false; 
+        cancelAnimationFrame(this.rAF);
+        releaseWakeLock();
+        updateTitle('');
         this.els.h.value = ''; this.els.m.value = ''; this.els.s.value = '';
-        this.updateUIState(); this.els.ring.style.strokeDashoffset = 282.74;
-        this.els.display.textContent = 'GO'; 
+        this.updateUIState(); 
+        this.els.ring.style.strokeDashoffset = 282.74;
+        updateText(this.els.display, 'GO'); 
         this.els.display.classList.add('is-go');
     },
 
@@ -60,10 +71,11 @@ export const tm = {
             this.els.inputs.classList.add('hidden', 'opacity-0'); this.els.resetBtn.classList.add('hidden'); this.els.status.classList.add('hidden'); 
             this.els.display.classList.remove('is-go');
         } else if (this.isPaused) {
-            this.els.inputs.classList.add('hidden', 'opacity-0'); this.els.resetBtn.classList.remove('hidden'); this.els.status.classList.remove('hidden'); this.els.status.textContent = t('pause'); 
+            this.els.inputs.classList.add('hidden', 'opacity-0'); this.els.resetBtn.classList.remove('hidden'); this.els.status.classList.remove('hidden'); 
+            updateText(this.els.status, t('pause')); 
         } else {
             this.els.inputs.classList.remove('hidden', 'opacity-0'); this.els.resetBtn.classList.add('hidden'); this.els.status.classList.add('hidden'); 
-            this.els.display.classList.add('is-go'); this.els.display.textContent = 'GO';
+            this.els.display.classList.add('is-go'); updateText(this.els.display, 'GO');
         }
     },
 
@@ -79,7 +91,9 @@ export const tm = {
         
         if (remaining <= 0) {
             this.isRunning = false;
-            requestAnimationFrame(() => { showToast(t('timer_finished')); this.reset(); }); return;
+            vibrate([200, 100, 200, 100, 400]); // Длинная вибрация при завершении
+            requestAnimationFrame(() => { showToast(t('timer_finished')); this.reset(); }); 
+            return;
         }
         this.rAF = requestAnimationFrame(() => this.tick());
     },
@@ -98,7 +112,8 @@ export const tm = {
         else if (mInput > 0 || m > 0) timeStr = `${pad(m)}:${pad(s)}`;
         else timeStr = `${s}`;
 
-        this.els.display.textContent = timeStr;
+        updateText(this.els.display, timeStr);
+        updateTitle(timeStr);
         this.els.ring.style.strokeDashoffset = 282.74 - ((Math.max(0, this.totalDuration - rem) / this.totalDuration) * 282.74);
     }
 };
