@@ -11,9 +11,9 @@ export const tb = {
             startBtn: $('tb-startBtn'), stopBtn: $('tb-stopBtn'), ring: $('tb-progressRing'), status: $('tb-statusText'), timer: $('tb-mainTimer'),
             activeName: $('tb-activeName'), activeDetail: $('tb-activeDetail'), roundDisplay: $('tb-currentRound'), totalRoundsDisplay: $('tb-totalRounds'),
             editName: $('tb-edit-name'), editWork: $('tb-edit-work'), editRest: $('tb-edit-rest'), editRounds: $('tb-edit-rounds'),
+            nameError: $('tb-name-error') // Поле ошибки
         };
 
-        // Безопасный парсинг
         try {
             const stored = localStorage.getItem('tb_workouts');
             if (stored) {
@@ -21,7 +21,7 @@ export const tb = {
                 if (!Array.isArray(this.workouts) || this.workouts.length === 0) throw new Error("Invalid data");
             } else throw new Error("No data");
         } catch (e) {
-            this.workouts = [{ id: 1, name: "Standard Tabata", work: 20, rest: 10, rounds: 8 }];
+            this.workouts = [{ id: 1, name: "Tabata 1", work: 20, rest: 10, rounds: 8 }];
             localStorage.setItem('tb_workouts', JSON.stringify(this.workouts));
         }
         
@@ -33,6 +33,9 @@ export const tb = {
         $('tb-openModalBtn')?.addEventListener('click', () => this.openModal());
         $('tb-closeModalBtn')?.addEventListener('click', () => this.closeModal());
         $('tb-saveModalBtn')?.addEventListener('click', () => this.saveWorkout());
+
+        // Скрываем ошибку при вводе
+        this.els.editName?.addEventListener('input', () => this.els.nameError?.classList.add('hidden'));
 
         document.querySelectorAll('[data-tb-adj]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -58,9 +61,23 @@ export const tb = {
             if (e.key === 'Enter' && row) this.selectWorkout(Number(row.dataset.id));
         });
     },
+
+    // Генератор уникального имени
+    getUniqueName(baseName) {
+        let name = baseName;
+        let counter = 1;
+        const exists = (n) => this.workouts.some(w => w.name.toLowerCase() === n.toLowerCase());
+        
+        while (exists(name)) {
+            name = `${baseName} ${counter}`;
+            counter++;
+        }
+        return name;
+    },
     
-    // --- Анимации Модалок Табаты ---
     openModal() {
+        this.els.nameError?.classList.add('hidden'); // Сброс ошибки
+        
         this.els.modal.classList.remove('hidden'); 
         this.els.modal.classList.add('flex');
         this.els.modal.removeAttribute('inert'); 
@@ -70,7 +87,9 @@ export const tb = {
             this.els.modal.classList.remove('opacity-0', 'translate-y-16');
         });
 
-        this.els.editName.value = ""; this.els.editWork.value = 20; this.els.editRest.value = 10; this.els.editRounds.value = 8;
+        // Автоматически предлагаем уникальное имя
+        this.els.editName.value = this.getUniqueName(t('tabata')); 
+        this.els.editWork.value = 20; this.els.editRest.value = 10; this.els.editRounds.value = 8;
         setTimeout(() => this.els.editName.focus(), 100);
     },
     
@@ -85,10 +104,22 @@ export const tb = {
     },
     
     saveWorkout() {
+        let finalName = this.els.editName.value.trim();
+        if (!finalName) finalName = this.getUniqueName(t('tabata'));
+
+        // Проверка на дубликат
+        const exists = this.workouts.some(w => w.name.toLowerCase() === finalName.toLowerCase());
+        if (exists) {
+            this.els.nameError?.classList.remove('hidden');
+            this.els.editName.classList.add('animate-shake');
+            setTimeout(() => this.els.editName.classList.remove('animate-shake'), 300);
+            return; // Прерываем сохранение
+        }
+
         const w = Math.max(1, parseInt(this.els.editWork.value) || 20);
         const r = Math.max(1, parseInt(this.els.editRest.value) || 10);
         const rnd = Math.max(1, parseInt(this.els.editRounds.value) || 8);
-        const newW = { id: Date.now(), name: this.els.editName.value.trim() || "Tabata", work: w, rest: r, rounds: rnd };
+        const newW = { id: Date.now(), name: finalName, work: w, rest: r, rounds: rnd };
         
         this.workouts.push(newW); localStorage.setItem('tb_workouts', JSON.stringify(this.workouts));
         this.renderList(); this.selectWorkout(newW.id); this.closeModal();

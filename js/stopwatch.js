@@ -15,6 +15,7 @@ export const sw = {
             modal: $('sw-sessions-modal'), sessionsList: $('sw-sessionsList'), sortSelect: $('sw-sortSelect'),
             nameModal: $('sw-name-modal'), nameModalContent: $('sw-name-modal-content'), 
             nameTitle: $('sw-name-title'), nameInput: $('sw-name-input'), 
+            nameError: $('sw-name-error'), // Добавлено поле ошибки
             nameCancel: $('sw-name-cancel'), nameConfirm: $('sw-name-confirm'),
             lapFlash: $('sw-lapFlash')
         };
@@ -29,6 +30,9 @@ export const sw = {
         this.els.nameCancel?.addEventListener('click', () => this.closeNameModal());
         this.els.nameConfirm?.addEventListener('click', () => this.confirmNameModal());
         this.els.nameInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.confirmNameModal(); });
+        
+        // Скрываем ошибку при вводе
+        this.els.nameInput?.addEventListener('input', () => this.els.nameError?.classList.add('hidden'));
 
         this.els.sessionsList?.addEventListener('click', (e) => {
             const header = e.target.closest('.sw-session-header');
@@ -40,16 +44,11 @@ export const sw = {
             else if (header) this.toggleSessionDetails(Number(header.dataset.id));
         });
 
-        // Безопасный парсинг
         try {
             const stored = localStorage.getItem('sw_saved_sessions');
             if (stored) this.savedSessions = JSON.parse(stored);
-        } catch (e) {
-            console.error('Failed to parse sessions');
-            this.savedSessions = [];
-        }
+        } catch (e) { this.savedSessions = []; }
 
-        // Подписываемся на кастомные события
         document.addEventListener('languageChanged', () => this.renderSavedSessions());
         document.addEventListener('msChanged', () => {
             if (!this.isRunning && this.elapsedTime > 0) this.updateDisplay();
@@ -61,6 +60,19 @@ export const sw = {
         return formatMsTime(ms, showMs);
     },
     
+    // Генератор уникального имени
+    getUniqueName(baseName) {
+        let name = baseName;
+        let counter = 1;
+        const exists = (n) => this.savedSessions.some(s => s.name.toLowerCase() === n.toLowerCase());
+        
+        while (exists(name)) {
+            name = `${baseName} ${counter}`;
+            counter++;
+        }
+        return name;
+    },
+
     toggle() {
         vibrate(50);
         if (this.isRunning) {
@@ -152,7 +164,8 @@ export const sw = {
             sessionLaps.unshift({ total: total, diff: diff, index: sessionLaps.length + 1 });
         }
 
-        const defaultName = `${t('stopwatch')} ${new Date().toLocaleDateString()}`;
+        // Предлагаем уникальное имя
+        const defaultName = this.getUniqueName(t('stopwatch'));
         this.nameModalState.pendingSession = { id: Date.now(), name: '', date: Date.now(), totalTime: total, laps: sessionLaps };
         this.openNameModal('save', defaultName);
     },
@@ -164,10 +177,11 @@ export const sw = {
         this.openNameModal('rename', session.name, id);
     },
 
-    // --- Анимации Модалок Секундомера ---
     openNameModal(action, defaultName, targetId = null) {
         this.nameModalState.action = action;
         this.nameModalState.targetId = targetId;
+        
+        this.els.nameError?.classList.add('hidden'); // Сброс ошибки
         
         if (this.els.nameTitle) updateText(this.els.nameTitle, action === 'rename' ? t('rename') : t('save_session'));
         this.els.nameInput.value = defaultName;
@@ -223,6 +237,19 @@ export const sw = {
     confirmNameModal() {
         const inputVal = this.els.nameInput.value.trim();
         const finalName = inputVal !== '' ? inputVal : this.els.nameInput.placeholder;
+
+        // Валидация на дубликат имени
+        const isDuplicate = this.savedSessions.some(s => 
+            s.name.toLowerCase() === finalName.toLowerCase() && 
+            (this.nameModalState.action === 'save' || s.id !== this.nameModalState.targetId)
+        );
+
+        if (isDuplicate) {
+            this.els.nameError?.classList.remove('hidden');
+            this.els.nameInput.classList.add('animate-shake');
+            setTimeout(() => this.els.nameInput.classList.remove('animate-shake'), 300);
+            return; // Прерываем сохранение
+        }
 
         if (this.nameModalState.action === 'save') {
             const session = this.nameModalState.pendingSession;

@@ -14,7 +14,8 @@ export const translations = {
         date_new: "Newest first", date_old: "Oldest first", name_az: "Name (A-Z)", result_fast: "Result (Fastest)",
         empty_sessions: "No saved sessions", session_saved: "Session saved!", enter_name: "Enter session name:",
         rename: "Rename", delete: "Delete", cancel: "Cancel", session_name: "Session Name",
-        reset_confirm_msg: "Are you sure? Your saved workouts will not be deleted."
+        reset_confirm_msg: "Are you sure? Your saved workouts will not be deleted.",
+        name_exists: "Name already exists" // НОВОЕ
     },
     ru: {
         stopwatch: "Секундомер", timer: "Таймер", tabata: "Табата", settings: "Настройки",
@@ -31,7 +32,8 @@ export const translations = {
         date_new: "Сначала новые", date_old: "Сначала старые", name_az: "По имени (А-Я)", result_fast: "По результату",
         empty_sessions: "Нет сохраненных результатов", session_saved: "Сохранено!", enter_name: "Введите название:",
         rename: "Изменить", delete: "Удалить", cancel: "Отмена", session_name: "Имя сессии",
-        reset_confirm_msg: "Вы уверены? Ваши тренировки не будут удалены."
+        reset_confirm_msg: "Вы уверены? Ваши тренировки не будут удалены.",
+        name_exists: "Имя уже существует" // НОВОЕ
     }
 };
 
@@ -64,12 +66,10 @@ export const langManager = {
         if(ls) ls.value = isAuto ? 'auto' : lang;
         
         document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.getAttribute('data-i18n')));
-        
         document.dispatchEvent(new CustomEvent('languageChanged'));
     }
 };
 
-// Экспортируем 't' как классическую функцию в самом конце
 export function t(key) {
     return translations[langManager.current][key] || key;
 }
