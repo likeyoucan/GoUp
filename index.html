@@ -14,6 +14,7 @@
     <meta name="description" content="Stopwatch Pro - Browser based timer and Tabata interval app">
     <title>Stopwatch Pro</title>
 
+    <!-- Внимание: Для Production рекомендуется скомпилировать Tailwind в статический CSS файл -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -50,10 +51,11 @@
                      STOPWATCH VIEW
                 ========================================= -->
                 <div id="view-stopwatch" class="absolute inset-0 flex flex-col px-6 pb-2 transition-opacity duration-300 z-10">
-                    <div class="h-[55%] w-full flex flex-col items-center justify-center shrink-0">
+                    <div class="view-top-half h-[55%] w-full flex flex-col items-center justify-center shrink-0">
                         <h2 class="text-sm font-bold app-text-sec uppercase tracking-widest mb-4 mt-2" data-i18n="stopwatch">Stopwatch</h2>
-                        <div class="relative w-72 h-72 shrink-0 flex items-center justify-center">
-                            <svg class="w-full h-full transform" viewBox="0 0 100 100">
+                        <div class="timer-circle-wrap relative w-72 h-72 shrink-0 flex items-center justify-center">
+                            <!-- aria-hidden="true" для скрытия декоративных элементов от скринридеров -->
+                            <svg class="w-full h-full transform" viewBox="0 0 100 100" aria-hidden="true">
                                 <circle class="app-text opacity-10" stroke-width="4" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
                                 <circle id="sw-progressRing" class="progress-ring__circle primary-stroke" stroke-width="4" stroke-linecap="round" fill="transparent" r="45" cx="50" cy="50" stroke-dasharray="282.74" stroke-dashoffset="282.74" />
                             </svg>
@@ -65,7 +67,7 @@
                         </div>
                     </div>
 
-                    <div class="h-[45%] w-full flex flex-col shrink-0 min-h-0">
+                    <div class="view-bottom-half h-[45%] w-full flex flex-col shrink-0 min-h-0">
                         <div class="w-full flex justify-center h-14 shrink-0 mb-2">
                             <button id="sw-lapBtn" data-i18n="lap" class="hidden app-surface app-text w-32 h-12 rounded-full text-lg font-bold shadow-sm active:scale-95 transition-transform focus:outline-none">Lap</button>
                         </div>
@@ -92,10 +94,10 @@
                      TIMER VIEW
                 ========================================= -->
                 <div id="view-timer" inert aria-hidden="true" class="absolute inset-0 flex flex-col px-6 pb-2 opacity-0 pointer-events-none transition-opacity duration-300">
-                    <div class="h-[55%] w-full flex flex-col items-center justify-center shrink-0">
+                    <div class="view-top-half h-[55%] w-full flex flex-col items-center justify-center shrink-0">
                         <h2 class="text-sm font-bold app-text-sec uppercase tracking-widest mb-4 mt-2" data-i18n="countdown">Countdown</h2>
-                        <div class="relative w-72 h-72 shrink-0 flex items-center justify-center">
-                            <svg class="w-full h-full transform pointer-events-none" viewBox="0 0 100 100">
+                        <div class="timer-circle-wrap relative w-72 h-72 shrink-0 flex items-center justify-center">
+                            <svg class="w-full h-full transform pointer-events-none" viewBox="0 0 100 100" aria-hidden="true">
                                 <circle class="app-text opacity-10" stroke-width="4" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
                                 <circle id="tm-progressRing" class="progress-ring__circle primary-stroke" stroke-width="4" stroke-linecap="round" fill="transparent" r="45" cx="50" cy="50" stroke-dasharray="282.74" stroke-dashoffset="282.74" />
                             </svg>
@@ -105,20 +107,21 @@
                             </button>
                         </div>
                     </div>
-                    <div class="h-[45%] w-full flex flex-col items-center justify-start pt-4 shrink-0">
+                    <div class="view-bottom-half h-[45%] w-full flex flex-col items-center justify-start pt-4 shrink-0">
                         <div id="tm-inputs" class="flex items-center gap-2 transition-all duration-300">
                             <div class="flex flex-col items-center">
-                                <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Hours" id="tm-h" placeholder="00" class="w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
+                                <!-- Добавлен maxlength="2" -->
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Hours" id="tm-h" placeholder="00" class="timer-input w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
                                 <span class="text-[10px] mt-1 font-bold opacity-50" data-i18n="hr">HR</span>
                             </div>
                             <span class="text-2xl opacity-30 pb-4">:</span>
                             <div class="flex flex-col items-center">
-                                <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Minutes" id="tm-m" placeholder="00" class="w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Minutes" id="tm-m" placeholder="00" class="timer-input w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
                                 <span class="text-[10px] mt-1 font-bold opacity-50" data-i18n="min">MIN</span>
                             </div>
                             <span class="text-2xl opacity-30 pb-4">:</span>
                             <div class="flex flex-col items-center">
-                                <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Seconds" id="tm-s" placeholder="00" class="w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
+                                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Seconds" id="tm-s" placeholder="00" class="timer-input w-16 h-16 text-center text-4xl bg-transparent border-b-2 app-border outline-none font-mono placeholder-gray-500 transition-colors primary-focus-border">
                                 <span class="text-[10px] mt-1 font-bold opacity-50" data-i18n="sec">SEC</span>
                             </div>
                         </div>
@@ -130,10 +133,10 @@
                      TABATA VIEW
                 ========================================= -->
                 <div id="view-tabata" inert aria-hidden="true" class="absolute inset-0 flex flex-col px-6 pb-2 opacity-0 pointer-events-none transition-opacity duration-300">
-                    <div class="h-[55%] w-full flex flex-col items-center justify-center shrink-0">
+                    <div class="view-top-half h-[55%] w-full flex flex-col items-center justify-center shrink-0">
                         <h2 class="text-sm font-bold app-text-sec uppercase tracking-widest mb-4 mt-2" data-i18n="tabata_interval">Tabata Interval</h2>
-                        <div class="relative w-72 h-72 shrink-0 flex items-center justify-center">
-                            <svg class="w-full h-full transform" viewBox="0 0 100 100">
+                        <div class="timer-circle-wrap relative w-72 h-72 shrink-0 flex items-center justify-center">
+                            <svg class="w-full h-full transform" viewBox="0 0 100 100" aria-hidden="true">
                                 <circle class="app-text opacity-10" stroke-width="4" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
                                 <circle id="tb-progressRing" class="progress-ring__circle primary-stroke" stroke-width="4" stroke-linecap="round" fill="transparent" r="45" cx="50" cy="50" stroke-dasharray="282.74" stroke-dashoffset="282.74" />
                             </svg>
@@ -143,7 +146,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="h-[45%] w-full flex flex-col shrink-0 min-h-0">
+                    <div class="view-bottom-half h-[45%] w-full flex flex-col shrink-0 min-h-0">
                         <div id="tb-list-section" class="flex-1 flex flex-col min-h-0">
                             <div class="flex flex-col items-center mb-4 shrink-0">
                                 <span id="tb-activeName" class="text-xl font-bold app-text">Standard Tabata</span>
@@ -297,7 +300,7 @@
             <!-- =========================================
                  BOTTOM NAVIGATION
             ========================================= -->
-            <nav class="h-20 shrink-0 w-full flex justify-between items-center px-4 bg-transparent pb-4 z-30 border-t app-border sm:border-t-0 relative">
+            <nav class="h-20 shrink-0 w-full flex justify-between items-center px-4 bg-transparent pb-4 z-30 border-t app-border sm:border-t-0 relative app-nav-safe">
                 <button data-nav="stopwatch" class="nav-btn w-16 h-full flex flex-col items-center justify-center gap-1 group active:scale-90 transition-transform focus:outline-none rounded-xl">
                     <div class="relative w-7 h-7 flex items-center justify-center transition-colors text-gray-400 group-hover:text-gray-500" id="nav-icon-stopwatch">
                         <svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M12 1v4"></path><path d="M19.07 4.93L17.66 6.34"></path><path d="M4.93 4.93L6.34 6.34"></path></svg>
@@ -332,7 +335,8 @@
             <div id="sw-sessions-modal" inert aria-hidden="true" class="hidden absolute inset-0 z-50 app-bg flex-col p-6 transition-all duration-300 opacity-0 translate-y-16">
                 <div class="flex justify-between items-center mb-6 shrink-0">
                     <h2 class="text-2xl font-bold app-text" data-i18n="saved_results">Saved Results</h2>
-                    <button id="sw-closeResultsBtn" aria-label="Close modal" class="text-gray-500 p-2 text-xl focus:outline-none">&times;</button>
+                    <!-- Увеличена тач-зона через p-4 -->
+                    <button id="sw-closeResultsBtn" aria-label="Close modal" class="text-gray-500 p-4 -mr-2 text-xl focus:outline-none">&times;</button>
                 </div>
                 <div class="mb-4 shrink-0 flex items-center justify-between">
                     <span class="text-xs font-bold app-text-sec uppercase tracking-wider" data-i18n="sort_by">Sort by:</span>
@@ -351,26 +355,30 @@
 
             <!-- Stopwatch: Session Name Modal -->
             <div id="sw-name-modal" inert aria-hidden="true" class="hidden absolute inset-0 z-50 bg-black/80 items-center justify-center p-6 transition-opacity duration-300 opacity-0">
-                <div class="app-surface w-full max-w-sm rounded-3xl p-6 shadow-2xl border app-border flex flex-col gap-4 transform transition-all duration-300 opacity-0 translate-y-16" id="sw-name-modal-content">
+                <!-- Заменено на form для удобства отправки с мобильной клавиатуры -->
+                <form id="sw-name-modal-content" onsubmit="return false;" class="app-surface w-full max-w-sm rounded-3xl p-6 shadow-2xl border app-border flex flex-col gap-4 transform transition-all duration-300 opacity-0 translate-y-16">
                     <h3 id="sw-name-title" class="text-xl font-bold app-text" data-i18n="session_name">Session Name</h3>
                     <div class="flex flex-col">
                         <input type="text" id="sw-name-input" class="w-full bg-transparent border-b-2 app-border py-2 text-lg font-bold app-text outline-none primary-focus-border transition-colors" placeholder="Stopwatch...">
                         <span id="sw-name-error" class="hidden text-red-500 text-xs font-bold mt-2" data-i18n="name_exists">Name already exists</span>
                     </div>
                     <div class="flex justify-end gap-3 mt-4">
-                        <button id="sw-name-cancel" class="px-5 py-2.5 rounded-xl font-bold app-text-sec active:scale-95 transition-transform" data-i18n="cancel">Cancel</button>
-                        <button id="sw-name-confirm" class="px-5 py-2.5 rounded-xl font-bold text-white primary-bg shadow-lg active:scale-95 transition-transform" data-i18n="save">Save</button>
+                        <button type="button" id="sw-name-cancel" class="px-5 py-2.5 rounded-xl font-bold app-text-sec active:scale-95 transition-transform focus:outline-none" data-i18n="cancel">Cancel</button>
+                        <!-- type="submit" для подтверждения по Enter на мобильных -->
+                        <button type="submit" id="sw-name-confirm" class="px-5 py-2.5 rounded-xl font-bold text-white primary-bg shadow-lg active:scale-95 transition-transform focus:outline-none" data-i18n="save">Save</button>
                     </div>
-                </div>
+                </form>
             </div>
 
             <!-- Tabata Create Modal -->
             <div id="tb-modal" inert aria-hidden="true" class="hidden absolute inset-0 z-50 app-bg flex-col p-6 transition-all duration-300 opacity-0 translate-y-16">
-                <div class="flex justify-between items-center mb-8">
+                <div class="flex justify-between items-center mb-8 shrink-0">
                     <h2 class="text-2xl font-bold app-text" data-i18n="create_workout">Create Workout</h2>
-                    <button id="tb-closeModalBtn" aria-label="Close modal" class="text-gray-500 p-2 text-xl focus:outline-none">&times;</button>
+                    <!-- Увеличена тач-зона через p-4 -->
+                    <button id="tb-closeModalBtn" aria-label="Close modal" class="text-gray-500 p-4 -mr-2 text-xl focus:outline-none">&times;</button>
                 </div>
-                <div class="space-y-6 overflow-y-auto flex-1 no-scrollbar pb-10">
+                <!-- Завернуто в form -->
+                <form id="tb-modal-form" onsubmit="return false;" class="space-y-6 overflow-y-auto flex-1 no-scrollbar pb-10">
                     <div class="flex flex-col">
                         <label class="block text-xs font-bold uppercase app-text-sec mb-2" data-i18n="name">Name</label>
                         <input type="text" aria-label="Workout name" id="tb-edit-name" class="w-full bg-transparent border-b-2 app-border py-2 text-xl font-bold app-text outline-none transition-colors primary-focus-border" placeholder="Tabata">
@@ -379,29 +387,29 @@
                     <div class="flex justify-between items-center">
                         <div><span class="block text-lg font-bold app-text" data-i18n="work">Work</span><span class="text-xs app-text-sec" data-i18n="sec">SEC</span></div>
                         <div class="flex items-center gap-3">
-                            <button aria-label="Decrease work time" data-tb-adj="tb-edit-work,-5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">−</button>
-                            <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Work time in seconds" id="tb-edit-work" value="20" class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
-                            <button aria-label="Increase work time" data-tb-adj="tb-edit-work,5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">+</button>
+                            <button type="button" aria-label="Decrease work time" data-tb-adj="tb-edit-work,-5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90 focus:outline-none">−</button>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="Work time in seconds" id="tb-edit-work" value="20" class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
+                            <button type="button" aria-label="Increase work time" data-tb-adj="tb-edit-work,5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90 focus:outline-none">+</button>
                         </div>
                     </div>
                     <div class="flex justify-between items-center">
                         <div><span class="block text-lg font-bold app-text" data-i18n="rest">Rest</span><span class="text-xs app-text-sec" data-i18n="sec">SEC</span></div>
                         <div class="flex items-center gap-3">
-                            <button aria-label="Decrease rest time" data-tb-adj="tb-edit-rest,-5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">−</button>
-                            <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Rest time in seconds" id="tb-edit-rest" value="10" class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
-                            <button aria-label="Increase rest time" data-tb-adj="tb-edit-rest,5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">+</button>
+                            <button type="button" aria-label="Decrease rest time" data-tb-adj="tb-edit-rest,-5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90 focus:outline-none">−</button>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="Rest time in seconds" id="tb-edit-rest" value="10" class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
+                            <button type="button" aria-label="Increase rest time" data-tb-adj="tb-edit-rest,5" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90 focus:outline-none">+</button>
                         </div>
                     </div>
                     <div class="flex justify-between items-center">
                         <div><span class="block text-lg font-bold app-text" data-i18n="rounds">Rounds</span><span class="text-xs app-text-sec" data-i18n="count">COUNT</span></div>
                         <div class="flex items-center gap-3">
-                            <button aria-label="Decrease rounds" data-tb-adj="tb-edit-rounds,-1" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">−</button>
-                            <input type="text" inputmode="numeric" pattern="[0-9]*" aria-label="Number of rounds" id="tb-edit-rounds" value="8" class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
-                            <button aria-label="Increase rounds" data-tb-adj="tb-edit-rounds,1" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90">+</button>
+                            <button type="button" aria-label="Decrease rounds" data-tb-adj="tb-edit-rounds,-1" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90 focus:outline-none">−</button>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" aria-label="Number of rounds" id="tb-edit-rounds" value="8" class="w-14 text-center bg-transparent font-mono text-2xl font-bold outline-none app-text">
+                            <button type="button" aria-label="Increase rounds" data-tb-adj="tb-edit-rounds,1" class="w-10 h-10 rounded-full app-bg border app-border app-text flex items-center justify-center text-xl font-bold active:scale-90 focus:outline-none">+</button>
                         </div>
                     </div>
-                    <button id="tb-saveModalBtn" class="w-full primary-bg text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform mt-8 focus:outline-none" data-i18n="save">Save</button>
-                </div>
+                    <button type="submit" id="tb-saveModalBtn" class="w-full primary-bg text-white py-4 rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform mt-8 focus:outline-none" data-i18n="save">Save</button>
+                </form>
             </div>
 
             <!-- Settings: Reset Modal -->
@@ -410,8 +418,8 @@
                     <h3 class="text-xl font-bold text-red-500" data-i18n="reset_settings">Reset to Defaults</h3>
                     <p class="app-text-sec text-sm font-medium leading-relaxed" data-i18n="reset_confirm_msg">Are you sure? Your saved workouts will not be deleted.</p>
                     <div class="flex justify-end gap-3 mt-4">
-                        <button id="reset-cancel" class="px-5 py-2.5 rounded-xl font-bold app-text-sec active:scale-95 transition-transform" data-i18n="cancel">Cancel</button>
-                        <button id="reset-confirm" class="px-5 py-2.5 rounded-xl font-bold text-white bg-red-500 shadow-lg active:scale-95 transition-transform" data-i18n="reset">Reset</button>
+                        <button id="reset-cancel" class="px-5 py-2.5 rounded-xl font-bold app-text-sec active:scale-95 transition-transform focus:outline-none" data-i18n="cancel">Cancel</button>
+                        <button id="reset-confirm" class="px-5 py-2.5 rounded-xl font-bold text-white bg-red-500 shadow-lg active:scale-95 transition-transform focus:outline-none" data-i18n="reset">Reset</button>
                     </div>
                 </div>
             </div>

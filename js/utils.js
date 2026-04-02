@@ -10,21 +10,32 @@ export const updateTitle = (text) => {
     document.title = text ? `${text} - Stopwatch Pro` : 'Stopwatch Pro';
 };
 
+// Исправленная логика Wake Lock (Счетчик активных блокировок)
 let wakeLock = null;
+let wakeLockCount = 0;
+
 export const requestWakeLock = async () => {
+    wakeLockCount++;
     if ('wakeLock' in navigator && !wakeLock) {
         try { wakeLock = await navigator.wakeLock.request('screen'); } 
         catch (err) { console.warn('Wake Lock error:', err); }
     }
 };
+
 export const releaseWakeLock = () => {
-    if (wakeLock !== null) {
+    wakeLockCount = Math.max(0, wakeLockCount - 1);
+    if (wakeLockCount === 0 && wakeLock !== null) {
         wakeLock.release().then(() => { wakeLock = null; });
     }
 };
+
 document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-        wakeLock = await navigator.wakeLock.request('screen');
+    // Запрашиваем лок ТОЛЬКО если есть реально работающие таймеры (wakeLockCount > 0)
+    if (wakeLockCount > 0 && document.visibilityState === 'visible' && !wakeLock) {
+        if ('wakeLock' in navigator) {
+            try { wakeLock = await navigator.wakeLock.request('screen'); } 
+            catch (err) { console.warn('Wake Lock error:', err); }
+        }
     }
 });
 

@@ -1,3 +1,4 @@
+import { $ } from './utils.js';
 import { langManager } from './i18n.js';
 import { themeManager } from './theme.js';
 import { navigation } from './navigation.js';
@@ -7,8 +8,8 @@ import { tb } from './tabata.js';
 import { sm } from './sound.js';
 
 const resetModal = {
-    modal: document.getElementById('reset-modal'),
-    content: document.getElementById('reset-modal-content'),
+    modal: $('reset-modal'),
+    content: $('reset-modal-content'),
     
     open() {
         this.modal.classList.remove('hidden');
@@ -33,22 +34,24 @@ const resetModal = {
         }, 300);
     },
     confirm() {
-        localStorage.clear(); // Быстрая очистка всех настроек
+        // Безопасная очистка: удаляем только ключи НАШЕГО приложения
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('app_') || key.startsWith('sw_') || key.startsWith('tb_') || key.startsWith('theme_') || key.startsWith('font_')) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
         location.reload();
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Инициализация звука и вибрации
     sm.init();
-
-    // 2. Инициализация компонентов
     sw.init(); tm.init(); tb.init(); navigation.init();
-    
-    // 3. Инициализация темы и языка
     themeManager.init(); langManager.init();
 
-    // 4. Биндинг навигации
     document.querySelectorAll('[data-nav]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const viewId = e.currentTarget.getAttribute('data-nav');
@@ -56,14 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 5. Модалка сброса
-    document.getElementById('btn-open-reset')?.addEventListener('click', () => resetModal.open());
-    document.getElementById('reset-cancel')?.addEventListener('click', () => resetModal.close());
-    document.getElementById('reset-confirm')?.addEventListener('click', () => resetModal.confirm());
+    $('btn-open-reset')?.addEventListener('click', () => resetModal.open());
+    $('reset-cancel')?.addEventListener('click', () => resetModal.close());
+    $('reset-confirm')?.addEventListener('click', () => resetModal.confirm());
 
-    // 6. Глобальные горячие клавиши (Desktop)
+    // Глобальные горячие клавиши
     document.addEventListener('keydown', (e) => {
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+        // Добавлен 'BUTTON', чтобы пробел не вызывал двойной клик на сфокусированных кнопках
+        if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(e.target.tagName)) return;
 
         const view = navigation.activeView;
         
